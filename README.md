@@ -6,7 +6,7 @@
 
 Core delivery platform Node.js Frontend Template.
 
-Updated to template version 1.7.0.
+Using DEFRA frontend template version 1.8.0.
 
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
