@@ -1,12 +1,14 @@
+import { vi } from 'vitest'
+
 import { Cluster, Redis } from 'ioredis'
 
-import { config } from '~/src/config/config.js'
-import { buildRedisClient } from '~/src/server/common/helpers/redis-client.js'
+import { config } from '../../../config/config.js'
+import { buildRedisClient } from './redis-client.js'
 
-jest.mock('ioredis', () => ({
-  ...jest.requireActual('ioredis'),
-  Cluster: jest.fn().mockReturnValue({ on: () => ({}) }),
-  Redis: jest.fn().mockReturnValue({ on: () => ({}) })
+vi.mock('ioredis', () => ({
+  ...vi.importActual('ioredis'),
+  Cluster: vi.fn().mockReturnValue({ on: () => ({}) }),
+  Redis: vi.fn().mockReturnValue({ on: () => ({}) })
 }))
 
 describe('#buildRedisClient', () => {
@@ -19,7 +21,7 @@ describe('#buildRedisClient', () => {
       expect(Redis).toHaveBeenCalledWith({
         db: 0,
         host: '127.0.0.1',
-        keyPrefix: 'apha-sdo-frontend:',
+        keyPrefix: 'cdp-node-frontend-template:',
         port: 6379
       })
     })
@@ -41,7 +43,7 @@ describe('#buildRedisClient', () => {
         [{ host: '127.0.0.1', port: 6379 }],
         {
           dnsLookup: expect.any(Function),
-          keyPrefix: 'apha-sdo-frontend:',
+          keyPrefix: 'cdp-node-frontend-template:',
           redisOptions: { db: 0, password: 'pass', tls: {}, username: 'user' },
           slotsRefreshTimeout: 10000
         }

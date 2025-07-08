@@ -1,10 +1,12 @@
-# apha-sdo-frontend
+# CDP Node.js Frontend Template
 
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_apha-sdo-frontend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=DEFRA_apha-sdo-frontend)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_apha-sdo-frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DEFRA_apha-sdo-frontend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_apha-sdo-frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=DEFRA_apha-sdo-frontend)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=coverage)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
 
 Core delivery platform Node.js Frontend Template.
+
+Updated to template version 1.6.0.
 
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
@@ -31,13 +33,13 @@ Core delivery platform Node.js Frontend Template.
 
 ### Node.js
 
-Please install [Node.js](http://nodejs.org/) `>= v18` and [npm](https://nodejs.org/) `>= v9`. You will find it
+Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v9`. You will find it
 easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
 
 To use the correct version of Node.js for this application, via nvm:
 
 ```bash
-cd apha-sdo-frontend
+cd cdp-node-frontend-template
 nvm use
 ```
 
@@ -58,13 +60,15 @@ to how services might have a database (or MongoDB). All frontend services are gi
 matches the service name. e.g. `my-service` will have access to everything in Redis that is prefixed with `my-service`.
 
 If your service does not require a session cache to be shared between instances or if you don't require Redis, you can
-disable setting `SESSION_CACHE_ENGINE=false` or changing the default value in `~/src/config/index.js`.
+disable setting `SESSION_CACHE_ENGINE=false` or changing the default value in `src/config/index.js`.
 
 ## Proxy
 
-We are using forward-proxy which is set up by default. To make use of this: `import { fetch } from 'undici'` then because of the `setGlobalDispatcher(new ProxyAgent(proxyUrl))` calls will use the ProxyAgent Dispatcher
+We are using forward-proxy which is set up by default. To make use of this: `import { fetch } from 'undici'` then
+because of the `setGlobalDispatcher(new ProxyAgent(proxyUrl))` calls will use the ProxyAgent Dispatcher
 
-If you are not using Wreck, Axios or Undici or a similar http that uses `Request`. Then you may have to provide the proxy dispatcher:
+If you are not using Wreck, Axios or Undici or a similar http that uses `Request`. Then you may have to provide the
+proxy dispatcher:
 
 To add the dispatcher to your own client:
 
@@ -140,16 +144,20 @@ git config --global core.autocrlf false
 
 ### Development image
 
+> [!TIP]
+> For Apple Silicon users, you may need to add `--platform linux/amd64` to the `docker run` command to ensure
+> compatibility fEx: `docker build --platform=linux/arm64 --no-cache --tag cdp-node-frontend-template`
+
 Build:
 
 ```bash
-docker build --target development --no-cache --tag apha-sdo-frontend:development .
+docker build --target development --no-cache --tag cdp-node-frontend-template:development .
 ```
 
 Run:
 
 ```bash
-docker run -p 3000:3000 apha-sdo-frontend:development
+docker run -p 3000:3000 cdp-node-frontend-template:development
 ```
 
 ### Production image
@@ -157,13 +165,13 @@ docker run -p 3000:3000 apha-sdo-frontend:development
 Build:
 
 ```bash
-docker build --no-cache --tag apha-sdo-frontend .
+docker build --no-cache --tag cdp-node-frontend-template .
 ```
 
 Run:
 
 ```bash
-docker run -p 3000:3000 apha-sdo-frontend
+docker run -p 3000:3000 cdp-node-frontend-template
 ```
 
 ### Docker Compose

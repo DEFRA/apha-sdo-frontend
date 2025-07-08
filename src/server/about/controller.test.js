@@ -1,5 +1,5 @@
-import { createServer } from '~/src/server/index.js'
-import { statusCodes } from '~/src/server/common/constants/status-codes.js'
+import { createServer } from '../server.js'
+import { statusCodes } from '../common/constants/status-codes.js'
 
 describe('#aboutController', () => {
   /** @type {Server} */
@@ -24,7 +24,3 @@ describe('#aboutController', () => {
     expect(statusCode).toBe(statusCodes.ok)
   })
 })
-
-/**
- * @import { Server } from '@hapi/hapi'
- */
