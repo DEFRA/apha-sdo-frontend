@@ -6,7 +6,7 @@
 
 Core delivery platform Node.js Frontend Template.
 
-Updated to template version 1.6.0.
+Updated to template version 1.7.0.
 
 - [Requirements](#requirements)
   - [Node.js](#nodejs)
