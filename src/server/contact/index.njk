@@ -1,0 +1,147 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading,
+    caption: "Surveillance Data Orchestration (SDO) Portal"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+
+        <p class="govuk-body-l">
+          Get in touch with the SDO team for support, technical queries, or general enquiries about the surveillance data portal.
+        </p>
+
+        <a href="/contact-form" class="govuk-button govuk-button--start" data-module="govuk-button">
+          Start online enquiry
+          <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="m0 0h13l20 20-20 20H0l20-20z"></path>
+          </svg>
+        </a>
+
+        <h2 class="govuk-heading-m">SDO Support Team</h2>
+        <p>For technical support, data access issues, or general enquiries about the SDO portal:</p>
+
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper">
+            <h3 class="govuk-summary-card__title">Technical Support</h3>
+          </div>
+          <div class="govuk-summary-card__content">
+            <dl class="govuk-summary-list">
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Email</dt>
+                <dd class="govuk-summary-list__value">
+                  <a href="mailto:sdo.support@apha.gov.uk" class="govuk-link">sdo.support@apha.gov.uk</a>
+                </dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Phone</dt>
+                <dd class="govuk-summary-list__value">0208 026 3000</dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Hours</dt>
+                <dd class="govuk-summary-list__value">Monday to Friday, 9am to 5pm</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <h2 class="govuk-heading-m">Surveillance Intelligence Unit</h2>
+        <p>For questions about surveillance data, disease reporting, or analytical queries:</p>
+
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper">
+            <h3 class="govuk-summary-card__title">Surveillance Team</h3>
+          </div>
+          <div class="govuk-summary-card__content">
+            <dl class="govuk-summary-list">
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Email</dt>
+                <dd class="govuk-summary-list__value">
+                  <a href="mailto:surveillance.intelligence@apha.gov.uk" class="govuk-link">surveillance.intelligence@apha.gov.uk</a>
+                </dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Phone</dt>
+                <dd class="govuk-summary-list__value">0208 026 3010</dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Hours</dt>
+                <dd class="govuk-summary-list__value">Monday to Friday, 8:30am to 5:30pm</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <h2 class="govuk-heading-m">Emergency disease reporting</h2>
+        <div class="govuk-warning-text">
+          <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+          <strong class="govuk-warning-text__text">
+            <span class="govuk-warning-text__assistive">Warning</span>
+            For urgent disease outbreaks or suspected notifiable diseases, call the APHA emergency hotline immediately.
+          </strong>
+        </div>
+
+        <div class="govuk-summary-card">
+          <div class="govuk-summary-card__title-wrapper">
+            <h3 class="govuk-summary-card__title">Emergency Hotline</h3>
+          </div>
+          <div class="govuk-summary-card__content">
+            <dl class="govuk-summary-list">
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Phone</dt>
+                <dd class="govuk-summary-list__value">
+                  <strong>03000 200 301</strong>
+                </dd>
+              </div>
+              <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key">Hours</dt>
+                <dd class="govuk-summary-list__value">24 hours a day, 7 days a week</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <h2 class="govuk-heading-m">Postal address</h2>
+        <div class="govuk-body">
+          <p>
+            Animal and Plant Health Agency<br>
+            Surveillance Data Orchestration Team<br>
+            Woodham Lane<br>
+            New Haw<br>
+            Addlestone<br>
+            Surrey KT15 3NB
+          </p>
+        </div>
+
+        <h2 class="govuk-heading-m">External partners</h2>
+        <p>
+          If you're an external partner (veterinary practice, laboratory, or research institution) and need access to submit surveillance data, please contact your designated APHA liaison officer first.
+        </p>
+        <p>
+          If you don't have a liaison officer, contact the SDO support team using the details above.
+        </p>
+
+      </div>
+    </div>
+
+    <div class="govuk-grid-column-one-third">
+      <div class="govuk-body">
+        <h2 class="govuk-heading-m">Quick actions</h2>
+        <ul class="govuk-list govuk-list">
+          <li><a href="/contact-form" class="govuk-link">Submit an enquiry</a></li>
+          <li><a href="/dashboard" class="govuk-link">Access SDO portal</a></li>
+        </ul>
+
+        <h3 class="govuk-heading-s">Response times</h3>
+        <ul class="govuk-list govuk-list--bullet">
+          <li>General enquiries: 2 working days</li>
+          <li>Technical support: 1 working day</li>
+          <li>Emergency reports: Immediate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

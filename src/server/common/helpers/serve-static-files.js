@@ -25,8 +25,10 @@ export const serveStaticFiles = {
         {
           method: 'GET',
           path: '/javascripts/application.min.js',
-          handler: {
-            file: './javascripts/dxt-shared.min.js'
+          handler(request, h) {
+            return h
+              .file('./javascripts/dxt-shared.min.js')
+              .type('application/javascript')
           },
           options
         },

@@ -1,0 +1,137 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading,
+    caption: "Surveillance Data Orchestration (SDO) Portal"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        
+        <h2 class="govuk-heading-m">Account information</h2>
+        <dl class="govuk-summary-list">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+              Name
+            </dt>
+            <dd class="govuk-summary-list__value">
+              Dr. Sarah Johnson
+            </dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="#">
+                Change<span class="govuk-visually-hidden"> name</span>
+              </a>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+              Email address
+            </dt>
+            <dd class="govuk-summary-list__value">
+              sarah.johnson@apha.gov.uk
+            </dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link" href="#">
+                Change<span class="govuk-visually-hidden"> email address</span>
+              </a>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+              Role
+            </dt>
+            <dd class="govuk-summary-list__value">
+              Veterinary Surveillance Officer
+            </dd>
+            <dd class="govuk-summary-list__actions">
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+              Department
+            </dt>
+            <dd class="govuk-summary-list__value">
+              APHA - Surveillance Intelligence Unit
+            </dd>
+            <dd class="govuk-summary-list__actions">
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key">
+              Data access level
+            </dt>
+            <dd class="govuk-summary-list__value">
+              Gold tier - Full analytics access
+            </dd>
+            <dd class="govuk-summary-list__actions">
+            </dd>
+          </div>
+        </dl>
+        
+        <h2 class="govuk-heading-m">Notifications</h2>
+        <p>Manage how we contact you about surveillance data and system updates.</p>
+        
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset">
+            <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+              Email notifications
+            </legend>
+            <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+              <div class="govuk-checkboxes__item">
+                <input class="govuk-checkboxes__input" id="email-alerts" name="email-alerts" type="checkbox" value="alerts" checked>
+                <label class="govuk-label govuk-checkboxes__label" for="email-alerts">
+                  Disease outbreak alerts
+                </label>
+              </div>
+              <div class="govuk-checkboxes__item">
+                <input class="govuk-checkboxes__input" id="email-reports" name="email-reports" type="checkbox" value="reports" checked>
+                <label class="govuk-label govuk-checkboxes__label" for="email-reports">
+                  Weekly surveillance reports
+                </label>
+              </div>
+              <div class="govuk-checkboxes__item">
+                <input class="govuk-checkboxes__input" id="email-system" name="email-system" type="checkbox" value="system">
+                <label class="govuk-label govuk-checkboxes__label" for="email-system">
+                  System maintenance updates
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        
+        <h2 class="govuk-heading-m">Security</h2>
+        <p>Keep your surveillance data access secure.</p>
+        
+        <ul class="govuk-list">
+          <li><a href="#" class="govuk-link">Change password</a></li>
+          <li><a href="#" class="govuk-link">View sign-in history</a></li>
+          <li><a href="#" class="govuk-link">Manage two-factor authentication</a></li>
+          <li><a href="#" class="govuk-link">View data access log</a></li>
+        </ul>
+        
+        <h2 class="govuk-heading-m">Data preferences</h2>
+        <p>Manage your surveillance data preferences and downloads.</p>
+        
+        <ul class="govuk-list">
+          <li><a href="#" class="govuk-link">Export preferences</a></li>
+          <li><a href="#" class="govuk-link">Default report formats</a></li>
+          <li><a href="#" class="govuk-link">Data retention settings</a></li>
+        </ul>
+        
+        <h2 class="govuk-heading-m">Privacy and compliance</h2>
+        <ul class="govuk-list">
+          <li><a href="#" class="govuk-link">GDPR data rights</a></li>
+          <li><a href="#" class="govuk-link">Data protection policy</a></li>
+          <li><a href="#" class="govuk-link">Cookie settings</a></li>
+        </ul>
+        
+        <div class="govuk-inset-text">
+          <p>Need help with the SDO portal? <a href="/contact-form" class="govuk-link">Contact the SDO support team</a></p>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+{% endblock %}

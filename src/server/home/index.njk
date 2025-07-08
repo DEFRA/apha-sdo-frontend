@@ -3,55 +3,56 @@
 {% block content %}
   {{ appHeading({
     text: heading,
-    caption: "Core delivery platform Node.js Frontend Template."
+    caption: "Surveillance Data Orchestration (SDO) Portal"
   }) }}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
-        <p>
-          Welcome to the Frontend Template, a starter kit for Core Delivery Platform Node.js Frontends 🚀
+        <p class="govuk-body-l">
+          The Surveillance Data Orchestration (SDO) project enhances the detection, assessment, and mitigation of disease-related threats to livestock and wildlife in Great Britain.
         </p>
+
+        <a href="/oidc-signin" class="govuk-button govuk-button--start" data-module="govuk-button">
+          Sign in to SDO Portal
+          <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="m0 0h13l20 20-20 20H0l20-20z"></path>
+          </svg>
+        </a>
+
+        <h2 class="govuk-heading-m">What SDO does</h2>
         <p>
-          Based on <a href="https://defra.github.io/software-development-standards">DEFRA</a> and <a
-            href="https://design-system.service.gov.uk/">GOV.UK</a> best practices this starter kit provides you with
-          a deployable, production ready template 🙌🏻 to start your new service with.
+          SDO is part of the Scanning Surveillance Development Programme (SSDP), led by the Animal and Plant Health Agency (APHA). It provides a comprehensive and integrated approach to veterinary surveillance through modern data management and analytical tools.
         </p>
-        <p>This template comes with:</p>
-        <ul>
-          <li>
-            <a href="https://frontend.design-system.service.gov.uk/">GOV.UK Frontend</a>
-          </li>
-          <li>
-            <a href="https://hapi.dev">Hapi.js</a>
-          </li>
-          <li>
-            <a href="https://mozilla.github.io/nunjucks/">Nunjucks</a>
-          </li>
-          <li>
-            <a href="https://github.com/mozilla/node-convict">Node Convict</a>
-          </li>
-          <li>
-            <a href="https://jestjs.io/">Jest testing</a>
-          </li>
-          <li>GitHub Actions Pull Request and Publish jobs</li>
-          <li>
-            <a href="https://github.com/pinojs/pino">PinoJs logging</a>
-          </li>
-          <li>
-            <a href="https://standardjs.com">Standard JS</a>
-          </li>
-          <li>
-            <a href="https://eslint.org">ESLint</a>
-          </li>
-          <li>
-            <a href="https://stylelint.io">StyleLint</a>
-          </li>
-          <li>
-            <a href="https://prettier.io">Prettier</a>
-          </li>
-          <li>and lots more... 😎</li>
+
+        <h2 class="govuk-heading-m">Key features</h2>
+        <ul class="govuk-list govuk-list--bullet">
+          <li><strong>Data Integration:</strong> Unified platform for APHA and external data sources</li>
+          <li><strong>Advanced Analytics:</strong> Centralised data lake with Medallion Architecture (Bronze, Silver, Gold layers)</li>
+          <li><strong>Automated Workflows:</strong> Streamlined data pipelines for efficient processing</li>
+          <li><strong>Secure Governance:</strong> Enhanced data security protocols and compliance</li>
+          <li><strong>Disease Monitoring:</strong> Real-time surveillance and outbreak detection</li>
         </ul>
+
+        <div class="govuk-inset-text">
+          <p>This system is for authorised APHA personnel and approved external partners involved in veterinary surveillance activities.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="govuk-grid-column-one-third">
+      <div class="govuk-body">
+        <h2 class="govuk-heading-m">Quick links</h2>
+        <ul class="govuk-list">
+          <li><a href="/oidc-signin" class="govuk-link">Sign in</a></li>
+          <li><a href="/dashboard" class="govuk-link">Dashboard</a></li>
+          <li><a href="/contact" class="govuk-link">Contact</a></li>
+        </ul>
+
+        <h3 class="govuk-heading-s">For external partners</h3>
+        <p class="govuk-body-s">
+          If you're an external partner needing access to submit surveillance data, please contact your APHA liaison officer.
+        </p>
       </div>
     </div>
   </div>
