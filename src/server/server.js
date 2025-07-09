@@ -15,6 +15,7 @@ import { requestLogger } from './common/helpers/logging/request-logger.js'
 import { sessionCache } from './common/helpers/session-cache/session-cache.js'
 import { getCacheEngine } from './common/helpers/session-cache/cache-engine.js'
 import { secureContext } from './common/helpers/secure-context/secure-context.js'
+import { context } from '../config/nunjucks/context/context.js'
 
 import services from './forms.js'
 
@@ -79,7 +80,7 @@ export async function createServer() {
        * Options that DXT uses to render Nunjucks templates
        */
       nunjucks: {
-        baseLayoutPath: 'layouts/forms-layout.njk', // the base page layout. Usually based off https://design-system.service.gov.uk/styles/page-template/
+        baseLayoutPath: 'layouts/page.njk', // the base page layout. Usually based off https://design-system.service.gov.uk/styles/page-template/
         paths: [
           path.resolve(config.get('root'), 'src/server/common/templates'),
           path.resolve(config.get('root'), 'src/server/common/components')
@@ -107,10 +108,13 @@ export async function createServer() {
       viewContext: async (request) => {
         // async can be dropped if there's no async code within
         const user = await userService.getUser(request.auth.credentials)
+        const pageContext = context(request)
 
         return {
           greeting: 'Hello', // available to render on a nunjucks page as {{ greeting }}
-          username: user.username // available to render on a nunjucks page as {{ username }}
+          username: user.username, // available to render on a nunjucks page as {{ username }}
+          // Add context variables required by page.njk
+          ...pageContext
         }
       }
     }
