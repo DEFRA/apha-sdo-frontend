@@ -13,10 +13,9 @@
   <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/govuk-apple-touch-icon-152x152.png">
   <link rel="apple-touch-icon" href="/assets/images/govuk-apple-touch-icon.png">
   <link href="/public/stylesheets/application.css" rel="stylesheet">
-  <link href="/public/stylesheets/dxt-application.min.css" rel="stylesheet">
 </head>
-<body class="govuk-template__body">
-  <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
+<body class="govuk-template__body govuk-frontend-supported">
+  <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
   <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
 
@@ -62,6 +61,6 @@
   </footer>
 
   <script src="/public/javascripts/application.js"></script>
-  <script src="/javascripts/application.min.js" type="module"></script>
+  <script src="/public/javascripts/dxt-shared.min.js" type="module"></script>
 </body>
 </html>
