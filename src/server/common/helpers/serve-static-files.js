@@ -1,19 +1,46 @@
 import { config } from '../../../config/config.js'
 import { statusCodes } from '../constants/status-codes.js'
 
+const options = {
+  auth: false,
+  cache: {
+    expiresIn: config.get('staticCacheTimeout'),
+    privacy: 'private'
+  }
+}
+
 export const serveStaticFiles = {
   plugin: {
     name: 'staticFiles',
     register(server) {
       server.route([
         {
-          options: {
-            auth: false,
-            cache: {
-              expiresIn: config.get('staticCacheTimeout'),
-              privacy: 'private'
+          method: 'GET',
+          path: '/stylesheets/application.min.css',
+          handler: {
+            file: './stylesheets/dxt-application.min.css'
+          },
+          options
+        },
+        {
+          method: 'GET',
+          path: '/javascripts/application.min.js',
+          handler: {
+            file: './javascripts/dxt-shared.min.js'
+          },
+          options
+        },
+        {
+          method: 'GET',
+          path: '/assets/{path*}',
+          handler: {
+            directory: {
+              path: './dxt-assets/'
             }
           },
+          options
+        },
+        {
           method: 'GET',
           path: '/favicon.ico',
           handler(_request, h) {

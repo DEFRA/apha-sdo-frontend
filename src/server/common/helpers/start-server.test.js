@@ -16,7 +16,7 @@ vi.mock('hapi-pino', () => ({
         error: mockHapiLoggerError
       })
     },
-    name: 'mock-hapi-pino'
+    name: 'hapi-pino'
   }
 }))
 

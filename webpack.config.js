@@ -15,6 +15,10 @@ const govukFrontendPath = path.dirname(
   require.resolve('govuk-frontend/package.json')
 )
 
+const defraFormsPath = path.dirname(
+  require.resolve('@defra/forms-engine-plugin/package.json')
+)
+
 const ruleTypeAssetResource = 'asset/resource'
 
 export default {
@@ -94,7 +98,8 @@ export default {
                 loadPaths: [
                   path.join(dirname, 'src/client/stylesheets'),
                   path.join(dirname, 'src/server/common/components'),
-                  path.join(dirname, 'src/server/common/templates/partials')
+                  path.join(dirname, 'src/server/common/templates/partials'),
+                  path.join(defraFormsPath, '.server/client/stylesheets')
                 ],
                 quietDeps: true,
                 sourceMapIncludeSources: true,
@@ -164,7 +169,12 @@ export default {
         {
           from: path.join(govukFrontendPath, 'dist/govuk/assets'),
           to: 'assets'
-        }
+        },
+        {
+          from: require.resolve('@defra/forms-engine-plugin/shared.min.js'),
+          to: 'javascripts/dxt-shared.min.js'
+        },
+        { from: path.join(defraFormsPath, '.public/assets'), to: 'dxt-assets' }
       ]
     })
   ],

@@ -1,7 +1,8 @@
-@use "govuk-frontend";
+// @use "govuk-frontend";
+@use 'shared'; // DEFRA Forms - includes govuk-frontend
 
-@use "variables";
-@use "helpers";
-@use "core";
-@use "components";
-@use "partials";
+@use 'variables';
+@use 'helpers';
+@use 'core';
+@use 'components';
+@use 'partials';
