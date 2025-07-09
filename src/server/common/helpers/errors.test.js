@@ -22,9 +22,7 @@ describe('#errors', () => {
       url: '/non-existent-path'
     })
 
-    expect(result).toEqual(
-      expect.stringContaining('Page not found | cdp-node-frontend-template')
-    )
+    expect(result).toEqual(expect.stringContaining('Page not found | APHA SDO'))
     expect(statusCode).toBe(statusCodes.notFound)
   })
 })

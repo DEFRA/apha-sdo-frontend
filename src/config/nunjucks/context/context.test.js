@@ -56,11 +56,11 @@ describe('context and cache', () => {
             },
             {
               current: false,
-              text: 'About',
-              href: '/about'
+              text: 'Contact',
+              href: '/contact'
             }
           ],
-          serviceName: 'cdp-node-frontend-template',
+          serviceName: 'APHA SDO',
           serviceUrl: '/'
         })
       })
@@ -145,11 +145,11 @@ describe('context and cache', () => {
             },
             {
               current: false,
-              text: 'About',
-              href: '/about'
+              text: 'Contact',
+              href: '/contact'
             }
           ],
-          serviceName: 'cdp-node-frontend-template',
+          serviceName: 'APHA SDO',
           serviceUrl: '/'
         })
       })

@@ -1,0 +1,47 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading,
+    caption: "Surveillance Data Orchestration (SDO) Portal"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-body" data-testid="app-page-body">
+        <p>
+          You have been successfully signed out of the SDO portal.
+        </p>
+        
+        <div class="govuk-panel govuk-panel--confirmation">
+          <h2 class="govuk-panel__title">
+            Signed out successfully
+          </h2>
+          <div class="govuk-panel__body">
+            Your surveillance data session has been ended
+          </div>
+        </div>
+        
+        <h2 class="govuk-heading-m">What happens next</h2>
+        <p>For security, we recommend you:</p>
+        <ul class="govuk-list govuk-list--bullet">
+          <li>Close your browser if using a shared computer</li>
+          <li>Clear your browser history if using a shared computer</li>
+          <li>Ensure any downloaded surveillance data is stored securely</li>
+        </ul>
+        
+        <div class="govuk-inset-text">
+          <p>Remember to follow APHA data security protocols when handling surveillance data.</p>
+        </div>
+        
+        <p>
+          <a href="/oidc-signin" class="govuk-link">Sign in again</a> to continue using the SDO portal.
+        </p>
+        
+        <p>
+          <a href="/" class="govuk-link">Return to home page</a>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

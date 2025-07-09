@@ -7,6 +7,10 @@ import {
   metadata as contactMetadata,
   definition as contactDefinition
 } from './forms/contact-form.js'
+import {
+  metadata as batRabiesMetadata,
+  definition as batRabiesDefinition
+} from './forms/bat-rabies.js'
 
 const formsService = {
   getFormMetadata: function (slug) {
@@ -15,6 +19,8 @@ const formsService = {
         return Promise.resolve(exampleMetadata)
       case contactMetadata.slug:
         return Promise.resolve(contactMetadata)
+      case batRabiesMetadata.slug:
+        return Promise.resolve(batRabiesMetadata)
       default:
         throw Boom.notFound(`Form '${slug}' not found`)
     }
@@ -25,6 +31,8 @@ const formsService = {
         return Promise.resolve(exampleDefinition)
       case contactMetadata.id:
         return Promise.resolve(contactDefinition)
+      case batRabiesMetadata.id:
+        return Promise.resolve(batRabiesDefinition)
       default:
         throw Boom.notFound(`Form '${id}' not found`)
     }
@@ -48,6 +56,17 @@ const formSubmissionService = {
     // Mock file deletion
     console.log(`Mock file deletion for file ${fileId}`)
     return { success: true }
+  },
+
+  submit: async (formData, formId) => {
+    console.log(`Mock form submission for form ${formId}:`, formData)
+    return {
+      id: `submission-${Date.now()}`,
+      formId,
+      submittedAt: new Date().toISOString(),
+      status: 'submitted',
+      data: formData
+    }
   }
 }
 
@@ -57,6 +76,17 @@ const outputService = {
     console.log(`Mock form submission for form ${formId}:`, formData)
     return {
       id: `submission-${Date.now()}`,
+      formId,
+      submittedAt: new Date().toISOString(),
+      status: 'submitted',
+      data: formData
+    }
+  },
+
+  submit: async (formData, formId) => {
+    console.log(`Mock output service submission for form ${formId}:`, formData)
+    return {
+      id: `output-${Date.now()}`,
       formId,
       submittedAt: new Date().toISOString(),
       status: 'submitted',

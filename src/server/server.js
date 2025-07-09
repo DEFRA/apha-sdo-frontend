@@ -94,6 +94,14 @@ export async function createServer() {
         outputService // where your form should be submitted to
       },
       /**
+       * File upload configuration
+       */
+      upload: {
+        maxBytes: 10485760, // 10MB
+        timeout: 60000, // 60 seconds
+        output: 'stream'
+      },
+      /**
        * View context attributes made available to your pages. Returns an object containing an arbitrary set of key-value pairs.
        */
       viewContext: async (request) => {
