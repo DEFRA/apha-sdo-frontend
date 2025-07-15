@@ -75,7 +75,8 @@ export async function createServer() {
   await server.register({
     plugin,
     options: {
-      cacheName: 'session', // must match a session you've instantiated in your hapi server config
+      baseUrl: 'http://localhost:3000',
+      cacheName: config.get('session.cache.name'), // must match a session you've instantiated in your hapi server config
       /**
        * Options that DXT uses to render Nunjucks templates
        */
@@ -93,14 +94,6 @@ export async function createServer() {
         formsService, // where your forms should be downloaded from.
         formSubmissionService, // handles temporary storage of file uploads
         outputService // where your form should be submitted to
-      },
-      /**
-       * File upload configuration
-       */
-      upload: {
-        maxBytes: 10485760, // 10MB
-        timeout: 60000, // 60 seconds
-        output: 'stream'
       },
       /**
        * View context attributes made available to your pages. Returns an object containing an arbitrary set of key-value pairs.
