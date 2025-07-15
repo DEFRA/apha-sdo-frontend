@@ -172,7 +172,7 @@ export default {
         },
         {
           from: require.resolve('@defra/forms-engine-plugin/shared.min.js'),
-          to: 'javascripts/dxt-shared.min.js'
+          to: 'javascripts/shared.min.js'
         },
         { from: path.join(defraFormsPath, '.public/assets'), to: 'dxt-assets' }
       ]
