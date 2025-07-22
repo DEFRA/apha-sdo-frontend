@@ -4,7 +4,7 @@ import { home } from './home/index.js'
 import { contact } from './contact/index.js'
 import { health } from './health/index.js'
 import { oidcSignin } from './oidc-signin/index.js'
-import { dashboard } from './dashboard/index.js'
+import { portal } from './portal/index.js'
 import { signout } from './signout/index.js'
 import { management } from './management/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
@@ -23,7 +23,7 @@ export const router = {
         home,
         contact,
         oidcSignin,
-        dashboard,
+        portal,
         signout,
         management
       ])

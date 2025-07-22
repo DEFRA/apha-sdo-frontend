@@ -1,0 +1,51 @@
+{% extends 'layouts/page.njk' %}
+
+{% block content %}
+  {{ appHeading({
+    text: heading,
+    caption: "Surveillance data submission portal"
+  }) }}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <!-- User Info Panel -->
+      <div class="govuk-notification-banner" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+        <div class="govuk-notification-banner__header">
+          <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+            Account Information
+          </h2>
+        </div>
+        <div class="govuk-notification-banner__content">
+          <p class="govuk-notification-banner__heading">
+            Logged in as: <strong>John Smith</strong> (john.smith@test.org)
+          </p>
+          <p class="govuk-body">
+            Organisation: Demo Organisation | Role: Submittor
+          </p>
+        </div>
+      </div>
+
+      <!-- Available Services -->
+      <h2 class="govuk-heading-m">Available Services</h2>
+
+      <ul class="govuk-list">
+        <li>
+          <a href="/bat-rabies" class="govuk-link govuk-!-font-weight-bold">Bat Rabies Surveillance Report</a>
+          <p class="govuk-body govuk-!-margin-bottom-0">Submit monthly bat rabies surveillance data.</p>
+        </li>
+      </ul>
+
+    </div>
+
+    <div class="govuk-grid-column-one-third">
+        <h3 class="govuk-heading-s">Help &amp; Resources</h3>
+        <ul class="govuk-list govuk-!-font-size-16">
+          <li>
+            <a href="/contact" class="govuk-link">Contact</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
