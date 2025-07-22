@@ -55,10 +55,10 @@ export const definition = {
         },
         {
           id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb7',
-          type: 'DatePartsField',
+          type: 'MonthYearField',
           name: 'receiptDate',
           title: 'Receipt date',
-          hint: 'Date when the bat sample was collected',
+          hint: 'Month and year when the bat sample was collected',
           options: {
             maxDaysInFuture: 0
           },
