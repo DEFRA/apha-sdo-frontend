@@ -54,21 +54,12 @@ export const definition = {
             '<p class="govuk-body">Please provide details about the bat sample being submitted for rabies surveillance testing.</p>'
         },
         {
-          id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb6',
-          type: 'TextField',
-          name: 'sampleId',
-          title: 'Sample ID',
-          hint: 'Enter the unique laboratory sample identifier',
-          schema: { required: true, max: 50 }
-        },
-        {
           id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb7',
           type: 'DatePartsField',
-          name: 'collectionDate',
-          title: 'Collection date',
+          name: 'receiptDate',
+          title: 'Receipt date',
           hint: 'Date when the bat sample was collected',
           options: {
-            maxDaysInPast: 365,
             maxDaysInFuture: 0
           },
           schema: { required: true }
@@ -97,14 +88,13 @@ export const definition = {
           title: 'Supporting documents',
           hint: 'Upload laboratory results spreadsheet',
           options: {
-            required: true,
+            required: false,
             accept:
               'text/csv, application/vnd.openxmlformats, officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet'
           }
         }
       ],
-      next: [{ path: '/summary' }],
-      controller: 'FileUploadPageController'
+      next: [{ path: '/summary' }]
     },
     {
       id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb3',

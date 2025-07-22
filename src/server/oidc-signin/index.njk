@@ -3,17 +3,17 @@
 {% block content %}
   {{ appHeading({
     text: heading,
-    caption: "Surveillance Data Orchestration (SDO) Portal"
+    caption: "Surveillance data submission portal"
   }) }}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
       <div class="govuk-body" data-testid="app-page-body">
         <p>
-          Sign in to access the APHA Surveillance Data Orchestration portal for veterinary surveillance data management.
+          Sign in to access the APHA surveillance data submission portal to submit veterinary surveillance data.
         </p>
 
-        <a href="/dashboard" class="govuk-button govuk-button--start" data-module="govuk-button">
+        <a href="/portal" class="govuk-button govuk-button--start" data-module="govuk-button">
           Sign in with DEFRA ID
           <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
             <path fill="currentColor" d="m0 0h13l20 20-20 20H0l20-20z"></path>
@@ -22,16 +22,14 @@
 
         <h2 class="govuk-heading-m">Before you start</h2>
         <p>You'll need a DEFRA ID to access the surveillance data portal.</p>
-        <p>This system is for:</p>
-        <ul class="govuk-list govuk-list--bullet">
-          <li>Veterinary surveillance data submission</li>
-          <li>Disease monitoring and reporting</li>
-          <li>Wildlife and livestock health data analysis</li>
-          <li>Authorised APHA personnel and external partners</li>
-        </ul>
+        <p>This system is for veterinary surveillance data submission.</p>
 
-        <div class="govuk-inset-text">
-          <p>If you don't have a DEFRA ID or need access, contact your system administrator.</p>
+        <div class="govuk-warning-text">
+          <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+          <strong class="govuk-warning-text__text">
+            <span class="govuk-warning-text__assistive">Warning</span>
+            If you don't have a DEFRA ID or need access, contact APHA: <a href="mailto:seda@apha.gov.uk">seda@apha.gov.uk</a>
+          </strong>
         </div>
       </div>
     </div>
