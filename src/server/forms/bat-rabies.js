@@ -35,30 +35,22 @@ export const definition = {
     },
     {
       name: 'documentation',
-      title: 'Supporting Documentation'
+      title: 'Files Upload'
     }
   ],
   pages: [
     {
       id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb1',
       path: '/sample-details',
-      title: 'Sample details',
+      title: 'Bat Rabies Submission Form',
       section: 'sample-information',
       components: [
         {
-          id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb5',
-          type: 'Html',
-          name: 'sampleInfo',
-          title: 'Sample Information',
-          content:
-            '<p class="govuk-body">Please provide details about the bat sample being submitted for rabies surveillance testing.</p>'
-        },
-        {
           id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb7',
           type: 'MonthYearField',
-          name: 'receiptDate',
-          title: 'Receipt date',
-          hint: 'Month and year when the bat sample was collected',
+          name: 'reportDate',
+          title: 'Report date',
+          hint: 'Month and year when bat submissions were tested',
           options: {
             maxDaysInFuture: 0
           },
@@ -70,17 +62,9 @@ export const definition = {
     {
       id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb2',
       path: '/file-upload',
-      title: 'Upload documentation',
+      title: 'Bat Rabies Submission Form',
       section: 'documentation',
       components: [
-        {
-          id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb8',
-          type: 'Html',
-          name: 'uploadInfo',
-          title: 'Upload Information',
-          content:
-            '<p class="govuk-body">Please upload any supporting documentation for this bat rabies surveillance submission.</p>'
-        },
         {
           id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb9',
           type: 'FileUploadField',
