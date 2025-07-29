@@ -60,7 +60,7 @@ describe('context and cache', () => {
               href: '/contact'
             }
           ],
-          serviceName: 'APHA SDO',
+          serviceName: 'APHA Surveillance data submission portal',
           serviceUrl: '/'
         })
       })
@@ -149,7 +149,7 @@ describe('context and cache', () => {
               href: '/contact'
             }
           ],
-          serviceName: 'APHA SDO',
+          serviceName: 'APHA Surveillance data submission portal',
           serviceUrl: '/'
         })
       })

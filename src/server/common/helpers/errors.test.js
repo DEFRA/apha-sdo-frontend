@@ -22,7 +22,11 @@ describe('#errors', () => {
       url: '/non-existent-path'
     })
 
-    expect(result).toEqual(expect.stringContaining('Page not found | APHA SDO'))
+    expect(result).toEqual(
+      expect.stringContaining(
+        'Page not found | APHA Surveillance data submission portal'
+      )
+    )
     expect(statusCode).toBe(statusCodes.notFound)
   })
 })

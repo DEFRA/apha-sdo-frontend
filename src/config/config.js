@@ -44,7 +44,7 @@ export const config = convict({
   serviceName: {
     doc: 'Applications Service Name',
     format: String,
-    default: 'APHA SDO'
+    default: 'APHA Surveillance data submission portal'
   },
   root: {
     doc: 'Project root',
