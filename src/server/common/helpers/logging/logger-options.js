@@ -3,9 +3,14 @@ import { getTraceId } from '@defra/hapi-tracing'
 
 import { config } from '../../../../config/config.js'
 
-const logConfig = config.get('log')
-const serviceName = config.get('serviceName')
-const serviceVersion = config.get('serviceVersion')
+const logConfig = config.get('log') || {
+  enabled: true,
+  level: 'info',
+  format: 'pino-pretty',
+  redact: []
+}
+const serviceName = config.get('serviceName') || 'cdp-node-frontend'
+const serviceVersion = config.get('serviceVersion') || '0.0.0'
 
 const formatters = {
   ecs: {
@@ -18,14 +23,14 @@ const formatters = {
 }
 
 export const loggerOptions = {
-  enabled: logConfig.enabled,
+  enabled: logConfig?.enabled ?? true,
   ignorePaths: ['/health'],
   redact: {
-    paths: logConfig.redact,
+    paths: logConfig?.redact || [],
     remove: true
   },
-  level: logConfig.level,
-  ...formatters[logConfig.format],
+  level: logConfig?.level || 'info',
+  ...formatters[logConfig?.format || 'pino-pretty'],
   nesting: true,
   mixin() {
     const mixinValues = {}

@@ -10,9 +10,16 @@ const mockLoggerInfo = vi.fn()
 const mockLoggerError = vi.fn()
 
 vi.mock('ioredis', () => ({
-  ...vi.importActual('ioredis'),
-  Cluster: vi.fn().mockReturnValue({ on: () => ({}) }),
-  Redis: vi.fn().mockReturnValue({ on: () => ({}) })
+  Cluster: vi.fn(() => ({
+    on: vi.fn(() => ({})),
+    connect: vi.fn(() => Promise.resolve()),
+    disconnect: vi.fn(() => Promise.resolve())
+  })),
+  Redis: vi.fn(() => ({
+    on: vi.fn(() => ({})),
+    connect: vi.fn(() => Promise.resolve()),
+    disconnect: vi.fn(() => Promise.resolve())
+  }))
 }))
 vi.mock('@hapi/catbox-redis')
 vi.mock('@hapi/catbox-memory')
