@@ -72,13 +72,14 @@ export const definition = {
           title: 'Supporting documents',
           hint: 'Upload laboratory results spreadsheet',
           options: {
-            required: false,
+            required: true,
             accept:
               'text/csv, application/vnd.openxmlformats, officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet'
           }
         }
       ],
-      next: [{ path: '/summary' }]
+      next: [{ path: '/summary' }],
+      controller: 'FileUploadPageController'
     },
     {
       id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb3',
