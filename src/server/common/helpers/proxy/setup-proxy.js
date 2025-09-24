@@ -16,7 +16,9 @@ export function setupProxy() {
     logger.info('setting up global proxies')
 
     const noProxy = process.env.NO_PROXY || ''
-    const cdpDomains = '*.cdp-int.defra.cloud'
+    // Include all CDP domains and subdomains
+    const cdpDomains =
+      '.cdp-int.defra.cloud,cdp-uploader.ext-test.cdp-int.defra.cloud'
     const updatedNoProxy = noProxy ? `${noProxy},${cdpDomains}` : cdpDomains
 
     process.env.NO_PROXY = updatedNoProxy
