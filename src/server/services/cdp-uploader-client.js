@@ -1,4 +1,3 @@
-import fetch from 'node-fetch'
 import { logger } from '../common/helpers/logging/logger.js'
 import { config } from '../../config/config.js'
 

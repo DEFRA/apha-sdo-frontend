@@ -8,16 +8,15 @@ import {
   resetInitializedState
 } from './cdp-uploader-client.js'
 
-import fetch from 'node-fetch'
 import { logger } from '../common/helpers/logging/logger.js'
 import { config } from '../../config/config.js'
 
 // Mock dependencies
 vi.mock('../common/helpers/logging/logger.js')
 vi.mock('../../config/config.js')
-vi.mock('node-fetch', () => ({
-  default: vi.fn()
-}))
+
+// Mock global fetch
+global.fetch = vi.fn()
 
 describe('CDP Uploader Client', () => {
   const mockConfig = {
@@ -88,7 +87,7 @@ describe('CDP Uploader Client', () => {
         expiresAt: Date.now() + 3600000
       }
 
-      fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
 
       const uploadOptions = {
         formPath: '/forms/test-form',
@@ -102,7 +101,7 @@ describe('CDP Uploader Client', () => {
       const result = await initiateUpload(uploadOptions)
 
       expect(result).toEqual(mockResponseData)
-      expect(fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://test-cdp-uploader.gov.uk/initiate',
         expect.objectContaining({
           method: 'POST',
@@ -140,14 +139,14 @@ describe('CDP Uploader Client', () => {
         uploadId: 'upload-123',
         uploadUrl: 'https://test.com'
       }
-      fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
 
       await initiateUpload({
         formPath: '/forms/test',
         retrievalKey: 'test-key'
       })
 
-      const callBody = JSON.parse(fetch.mock.calls[0][1].body)
+      const callBody = JSON.parse(global.fetch.mock.calls[0][1].body)
       expect(callBody.callbackUrl).toBe(
         'https://test-cdp-uploader.gov.uk/callback/upload'
       )
@@ -158,14 +157,14 @@ describe('CDP Uploader Client', () => {
         uploadId: 'upload-123',
         uploadUrl: 'https://test.com'
       }
-      fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
 
       await initiateUpload({
         formPath: '/forms/test',
         retrievalKey: 'test-key'
       })
 
-      const callBody = JSON.parse(fetch.mock.calls[0][1].body)
+      const callBody = JSON.parse(global.fetch.mock.calls[0][1].body)
       expect(callBody.allowedMimeTypes).toEqual([])
       expect(callBody.metadata).toEqual({})
       expect(callBody.maxFileSize).toBe(10485760)
@@ -194,8 +193,8 @@ describe('CDP Uploader Client', () => {
         ok: false
       })
 
-      fetch.mockReset()
-      fetch.mockResolvedValue(errorResponse)
+      global.fetch.mockReset()
+      global.fetch.mockResolvedValue(errorResponse)
 
       await expect(
         initiateUpload({
@@ -226,12 +225,12 @@ describe('CDP Uploader Client', () => {
         lastActivity: Date.now()
       }
 
-      fetch.mockResolvedValueOnce(new MockResponse(mockStatusData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockStatusData))
 
       const result = await getUploadStatus('upload-123')
 
       expect(result).toEqual(mockStatusData)
-      expect(fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://test-cdp-uploader.gov.uk/status/upload-123',
         expect.objectContaining({
           method: 'GET',
@@ -266,8 +265,8 @@ describe('CDP Uploader Client', () => {
         statusText: 'Not Found',
         ok: false
       })
-      fetch.mockReset()
-      fetch.mockResolvedValue(errorResponse)
+      global.fetch.mockReset()
+      global.fetch.mockResolvedValue(errorResponse)
 
       await expect(getUploadStatus('invalid-id')).rejects.toThrow(
         'Status check failed: CDP API error: 404 Not Found - Not Found'
@@ -287,7 +286,7 @@ describe('CDP Uploader Client', () => {
       const deletedAt = new Date().toISOString()
       const mockDeleteData = { deletedAt }
 
-      fetch.mockResolvedValueOnce(new MockResponse(mockDeleteData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockDeleteData))
 
       const result = await deleteUpload('upload-123')
 
@@ -297,7 +296,7 @@ describe('CDP Uploader Client', () => {
         deletedAt
       })
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://test-cdp-uploader.gov.uk/upload/upload-123',
         expect.objectContaining({
           method: 'DELETE',
@@ -315,7 +314,7 @@ describe('CDP Uploader Client', () => {
     })
 
     it('should use current timestamp when deletedAt not provided', async () => {
-      fetch.mockResolvedValueOnce(new MockResponse({}))
+      global.fetch.mockResolvedValueOnce(new MockResponse({}))
 
       const result = await deleteUpload('upload-123')
 
@@ -342,8 +341,8 @@ describe('CDP Uploader Client', () => {
         statusText: 'Forbidden',
         ok: false
       })
-      fetch.mockReset()
-      fetch.mockResolvedValue(errorResponse)
+      global.fetch.mockReset()
+      global.fetch.mockResolvedValue(errorResponse)
 
       await expect(deleteUpload('upload-123')).rejects.toThrow(
         'Upload deletion failed: CDP API error: 403 Forbidden - Forbidden'
@@ -550,7 +549,7 @@ describe('CDP Uploader Client', () => {
   describe('getHealthInfo', () => {
     it('should return healthy status when service is accessible', async () => {
       const mockHealthData = { version: '1.2.3', status: 'healthy' }
-      fetch.mockResolvedValueOnce(new MockResponse(mockHealthData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockHealthData))
 
       const result = await getHealthInfo()
 
@@ -564,7 +563,7 @@ describe('CDP Uploader Client', () => {
       expect(result.version).toBe('1.2.3')
       expect(result.responseTime).toBeGreaterThan(0)
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://test-cdp-uploader.gov.uk/health',
         expect.objectContaining({
           method: 'GET',
@@ -574,7 +573,7 @@ describe('CDP Uploader Client', () => {
     })
 
     it('should return unknown version when not provided', async () => {
-      fetch.mockResolvedValueOnce(new MockResponse({}))
+      global.fetch.mockResolvedValueOnce(new MockResponse({}))
 
       const result = await getHealthInfo()
 
@@ -582,7 +581,7 @@ describe('CDP Uploader Client', () => {
     })
 
     it('should return unhealthy status when service fails', async () => {
-      fetch.mockRejectedValueOnce(new Error('Service unavailable'))
+      global.fetch.mockRejectedValueOnce(new Error('Service unavailable'))
 
       const result = await getHealthInfo()
 
@@ -606,7 +605,7 @@ describe('CDP Uploader Client', () => {
       )
 
       // First two calls fail, third succeeds
-      fetch
+      global.fetch
         .mockRejectedValueOnce(new Error('Network timeout'))
         .mockRejectedValueOnce(new Error('Connection refused'))
         .mockResolvedValueOnce(new MockResponse({ uploadId: 'success' }))
@@ -617,7 +616,7 @@ describe('CDP Uploader Client', () => {
       })
 
       expect(result.uploadId).toBe('success')
-      expect(fetch).toHaveBeenCalledTimes(3)
+      expect(global.fetch).toHaveBeenCalledTimes(3)
       expect(logger.warn).toHaveBeenCalledTimes(2)
       expect(logger.warn).toHaveBeenCalledWith(
         'CDP API request failed (attempt 1/3)',
@@ -635,7 +634,7 @@ describe('CDP Uploader Client', () => {
         callback()
       )
 
-      fetch
+      global.fetch
         .mockRejectedValueOnce(new Error('Network error 1'))
         .mockRejectedValueOnce(new Error('Network error 2'))
         .mockRejectedValueOnce(new Error('Network error 3'))
@@ -647,7 +646,7 @@ describe('CDP Uploader Client', () => {
         })
       ).rejects.toThrow('Upload initiation failed: Network error 3')
 
-      expect(fetch).toHaveBeenCalledTimes(3)
+      expect(global.fetch).toHaveBeenCalledTimes(3)
       expect(logger.warn).toHaveBeenCalledTimes(3)
 
       global.setTimeout.mockRestore()
@@ -658,7 +657,7 @@ describe('CDP Uploader Client', () => {
         .spyOn(global, 'setTimeout')
         .mockImplementation((callback) => callback())
 
-      fetch
+      global.fetch
         .mockRejectedValueOnce(new Error('Error 1'))
         .mockRejectedValueOnce(new Error('Error 2'))
         .mockResolvedValueOnce(new MockResponse({ success: true }))
@@ -696,7 +695,7 @@ describe('CDP Uploader Client', () => {
 
       // Make multiple failures to test maximum delay cap
       for (let i = 0; i < 10; i++) {
-        fetch.mockRejectedValueOnce(new Error(`Error ${i}`))
+        global.fetch.mockRejectedValueOnce(new Error(`Error ${i}`))
       }
 
       try {
@@ -719,7 +718,7 @@ describe('CDP Uploader Client', () => {
 
   describe('Network failure error handling', () => {
     it('should handle network timeout errors', async () => {
-      fetch.mockRejectedValue(new Error('Request timeout'))
+      global.fetch.mockRejectedValue(new Error('Request timeout'))
 
       await expect(
         initiateUpload({
@@ -730,7 +729,7 @@ describe('CDP Uploader Client', () => {
     })
 
     it('should handle connection refused errors', async () => {
-      fetch.mockRejectedValue(new Error('connect ECONNREFUSED'))
+      global.fetch.mockRejectedValue(new Error('connect ECONNREFUSED'))
 
       await expect(getUploadStatus('upload-123')).rejects.toThrow(
         'Status check failed: connect ECONNREFUSED'
@@ -738,7 +737,7 @@ describe('CDP Uploader Client', () => {
     })
 
     it('should handle DNS resolution errors', async () => {
-      fetch.mockRejectedValue(new Error('getaddrinfo ENOTFOUND'))
+      global.fetch.mockRejectedValue(new Error('getaddrinfo ENOTFOUND'))
 
       await expect(deleteUpload('upload-123')).rejects.toThrow(
         'Upload deletion failed: getaddrinfo ENOTFOUND'
@@ -751,8 +750,8 @@ describe('CDP Uploader Client', () => {
         .fn()
         .mockRejectedValue(new Error('Unexpected end of JSON input'))
 
-      fetch.mockReset()
-      fetch.mockResolvedValue(invalidJsonResponse)
+      global.fetch.mockReset()
+      global.fetch.mockResolvedValue(invalidJsonResponse)
 
       await expect(
         initiateUpload({
@@ -842,7 +841,7 @@ describe('CDP Uploader Client', () => {
         uploadId: 'test',
         uploadUrl: 'https://test.com'
       }
-      fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
 
       await initiateUpload({
         formPath: '/forms/test',
@@ -850,7 +849,7 @@ describe('CDP Uploader Client', () => {
         metadata: null
       })
 
-      const callBody = JSON.parse(fetch.mock.calls[0][1].body)
+      const callBody = JSON.parse(global.fetch.mock.calls[0][1].body)
       expect(callBody.metadata).toEqual({})
     })
 
@@ -859,7 +858,7 @@ describe('CDP Uploader Client', () => {
         uploadId: 'test',
         uploadUrl: 'https://test.com'
       }
-      fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValueOnce(new MockResponse(mockResponseData))
 
       await initiateUpload({
         formPath: '/forms/test',
@@ -867,13 +866,13 @@ describe('CDP Uploader Client', () => {
         mimeTypes: []
       })
 
-      const callBody = JSON.parse(fetch.mock.calls[0][1].body)
+      const callBody = JSON.parse(global.fetch.mock.calls[0][1].body)
       expect(callBody.allowedMimeTypes).toEqual([])
     })
 
     it('should handle API responses with missing fields', async () => {
       const incompleteResponse = { uploadId: 'test' } // Missing other fields
-      fetch.mockResolvedValueOnce(new MockResponse(incompleteResponse))
+      global.fetch.mockResolvedValueOnce(new MockResponse(incompleteResponse))
 
       const result = await initiateUpload({
         formPath: '/forms/test',
@@ -891,7 +890,7 @@ describe('CDP Uploader Client', () => {
         uploadId: 'test1',
         uploadUrl: 'https://test1.com'
       }
-      fetch.mockResolvedValue(new MockResponse(mockResponseData))
+      global.fetch.mockResolvedValue(new MockResponse(mockResponseData))
 
       // Make multiple calls
       await initiateUpload({ formPath: '/forms/test1', retrievalKey: 'key1' })
@@ -906,36 +905,38 @@ describe('CDP Uploader Client', () => {
 
   describe('Request body construction', () => {
     it('should not include body for GET requests', async () => {
-      fetch.mockResolvedValueOnce(new MockResponse({ status: 'completed' }))
+      global.fetch.mockResolvedValueOnce(
+        new MockResponse({ status: 'completed' })
+      )
 
       await getUploadStatus('upload-123')
 
-      const fetchCall = fetch.mock.calls[0]
+      const fetchCall = global.fetch.mock.calls[0]
       const requestOptions = fetchCall[1]
       expect(requestOptions.body).toBeUndefined()
     })
 
     it('should not include body for DELETE requests', async () => {
-      fetch.mockResolvedValueOnce(
+      global.fetch.mockResolvedValueOnce(
         new MockResponse({ deletedAt: new Date().toISOString() })
       )
 
       await deleteUpload('upload-123')
 
-      const fetchCall = fetch.mock.calls[0]
+      const fetchCall = global.fetch.mock.calls[0]
       const requestOptions = fetchCall[1]
       expect(requestOptions.body).toBeUndefined()
     })
 
     it('should include body for POST requests', async () => {
-      fetch.mockResolvedValueOnce(new MockResponse({ uploadId: 'test' }))
+      global.fetch.mockResolvedValueOnce(new MockResponse({ uploadId: 'test' }))
 
       await initiateUpload({
         formPath: '/forms/test',
         retrievalKey: 'test-key'
       })
 
-      const fetchCall = fetch.mock.calls[0]
+      const fetchCall = global.fetch.mock.calls[0]
       const requestOptions = fetchCall[1]
       expect(requestOptions.body).toBeDefined()
       expect(typeof requestOptions.body).toBe('string')
