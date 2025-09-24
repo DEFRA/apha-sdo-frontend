@@ -15,11 +15,24 @@ export function setupProxy() {
   if (proxyUrl) {
     logger.info('setting up global proxies')
 
-    // Undici proxy
-    setGlobalDispatcher(new ProxyAgent(proxyUrl))
+    const noProxy = process.env.NO_PROXY || ''
+    const cdpDomains = '*.cdp-int.defra.cloud'
+    const updatedNoProxy = noProxy ? `${noProxy},${cdpDomains}` : cdpDomains
+
+    process.env.NO_PROXY = updatedNoProxy
+
+    logger.info(`Proxy bypass configured for: ${updatedNoProxy}`)
+
+    // Undici proxy with NO_PROXY support
+    setGlobalDispatcher(
+      new ProxyAgent({
+        uri: proxyUrl
+      })
+    )
 
     // global-agent (axios/request/and others)
     bootstrap()
     global.GLOBAL_AGENT.HTTP_PROXY = proxyUrl
+    global.GLOBAL_AGENT.NO_PROXY = updatedNoProxy
   }
 }
