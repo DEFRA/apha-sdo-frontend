@@ -6,9 +6,16 @@ import { config } from '../../../config/config.js'
 import { buildRedisClient } from './redis-client.js'
 
 vi.mock('ioredis', () => ({
-  ...vi.importActual('ioredis'),
-  Cluster: vi.fn().mockReturnValue({ on: () => ({}) }),
-  Redis: vi.fn().mockReturnValue({ on: () => ({}) })
+  Cluster: vi.fn(() => ({
+    on: vi.fn(() => ({})),
+    connect: vi.fn(() => Promise.resolve()),
+    disconnect: vi.fn(() => Promise.resolve())
+  })),
+  Redis: vi.fn(() => ({
+    on: vi.fn(() => ({})),
+    connect: vi.fn(() => Promise.resolve()),
+    disconnect: vi.fn(() => Promise.resolve())
+  }))
 }))
 
 describe('#buildRedisClient', () => {

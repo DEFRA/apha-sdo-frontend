@@ -8,6 +8,7 @@ import { portal } from './portal/index.js'
 import { signout } from './signout/index.js'
 import { management } from './management/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
+import fileUploadCallback from './file-upload-callback/index.js'
 
 export const router = {
   plugin: {
@@ -25,7 +26,15 @@ export const router = {
         oidcSignin,
         portal,
         signout,
-        management
+        management,
+        {
+          plugin: {
+            name: 'file-upload-callback',
+            register: async (server) => {
+              server.route(fileUploadCallback)
+            }
+          }
+        }
       ])
 
       // Static assets

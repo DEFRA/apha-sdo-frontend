@@ -219,6 +219,122 @@ export const config = convict({
       default: 'x-cdp-request-id',
       env: 'TRACING_HEADER'
     }
+  },
+  cdpUploader: {
+    baseUrl: {
+      doc: 'CDP-Uploader service base URL',
+      format: 'url',
+      default: 'https://cdp-uploader-frontend.cdp-int.defra.cloud',
+      env: 'CDP_UPLOADER_URL'
+    },
+    submissionUrl: {
+      doc: 'Submission service URL for callbacks',
+      format: 'url',
+      default: 'https://apha-sdo-frontend.cdp-int.defra.cloud',
+      env: 'SUBMISSION_URL'
+    },
+    callbackAuthToken: {
+      doc: 'Authentication token for callback requests',
+      format: String,
+      default: '',
+      env: 'CALLBACK_AUTH_TOKEN',
+      sensitive: true
+    },
+    bucketName: {
+      doc: 'Azure storage bucket name for uploads',
+      format: String,
+      default: 'apha-sdo-uploads',
+      env: 'CDP_UPLOADER_BUCKET'
+    },
+    stagingPrefix: {
+      doc: 'Staging path prefix for uploaded files',
+      format: String,
+      default: 'staging/',
+      env: 'CDP_UPLOADER_STAGING_PREFIX'
+    },
+    maxFileSize: {
+      doc: 'Maximum file size in bytes',
+      format: Number,
+      default: 25 * 1024 * 1024, // 25MB
+      env: 'CDP_UPLOADER_MAX_FILE_SIZE'
+    },
+    timeout: {
+      doc: 'Request timeout in milliseconds',
+      format: Number,
+      default: 30000,
+      env: 'CDP_UPLOADER_TIMEOUT'
+    },
+    retryAttempts: {
+      doc: 'Number of retry attempts for failed requests',
+      format: Number,
+      default: 3,
+      env: 'CDP_UPLOADER_RETRY_ATTEMPTS'
+    }
+  },
+  azureStorage: {
+    enabled: {
+      doc: 'Enable Azure Storage integration',
+      format: Boolean,
+      default: isProduction,
+      env: 'AZURE_STORAGE_ENABLED'
+    },
+    connectionString: {
+      doc: 'Azure Storage connection string',
+      format: String,
+      default: '',
+      env: 'AZURE_STORAGE_CONNECTION_STRING',
+      sensitive: true
+    },
+    accountName: {
+      doc: 'Azure Storage account name',
+      format: String,
+      default: '',
+      env: 'AZURE_STORAGE_ACCOUNT_NAME'
+    },
+    accountKey: {
+      doc: 'Azure Storage account key',
+      format: String,
+      default: '',
+      env: 'AZURE_STORAGE_ACCOUNT_KEY',
+      sensitive: true
+    },
+    tenantId: {
+      doc: 'Azure AD Tenant ID for Service Principal authentication',
+      format: String,
+      default: '',
+      env: 'AZURE_TENANT_ID'
+    },
+    clientId: {
+      doc: 'Azure AD Client ID for Service Principal authentication',
+      format: String,
+      default: '',
+      env: 'AZURE_CLIENT_ID'
+    },
+    clientSecret: {
+      doc: 'Azure AD Client Secret for Service Principal authentication',
+      format: String,
+      default: '',
+      env: 'AZURE_CLIENT_SECRET',
+      sensitive: true
+    },
+    containerName: {
+      doc: 'Default Azure Blob container name',
+      format: String,
+      default: 'apha-sdo-uploads',
+      env: 'AZURE_STORAGE_CONTAINER_NAME'
+    },
+    enableBackgroundProcessing: {
+      doc: 'Enable background processing of uploads to Azure',
+      format: Boolean,
+      default: true,
+      env: 'AZURE_STORAGE_BACKGROUND_PROCESSING'
+    },
+    processingTimeout: {
+      doc: 'Timeout for Azure upload processing in milliseconds',
+      format: Number,
+      default: 300000, // 5 minutes
+      env: 'AZURE_STORAGE_PROCESSING_TIMEOUT'
+    }
   }
 })
 
