@@ -80,6 +80,66 @@ export function getSession(uploadId) {
 }
 
 /**
+ * Update file retention by updating retrieval key
+ */
+export function updateFileRetention(fileId, updatedRetrievalKey) {
+  // Find the session associated with this file ID
+  let targetSession = null
+
+  for (const [session] of state.sessions) {
+    if (
+      session.metadata &&
+      (session.metadata.fileId === fileId || session.uploadId === fileId)
+    ) {
+      targetSession = session
+      break
+    }
+  }
+
+  if (!targetSession) {
+    // If no session found, create a retention record
+    logger.warn('No session found for file, creating retention record', {
+      fileId,
+      retrievalKey: updatedRetrievalKey
+    })
+
+    // Store retention info even if session doesn't exist
+    const retentionRecord = {
+      fileId,
+      retrievalKey: updatedRetrievalKey,
+      updatedAt: Date.now()
+    }
+
+    // Store as a special retention session
+    state.sessions.set(`retention-${fileId}`, {
+      uploadId: fileId,
+      status: 'retained',
+      createdAt: Date.now(),
+      lastActivity: Date.now(),
+      metadata: retentionRecord
+    })
+
+    return retentionRecord
+  }
+
+  // Update the existing session with new retrieval key
+  targetSession.metadata = {
+    ...targetSession.metadata,
+    retrievalKey: updatedRetrievalKey,
+    retentionUpdatedAt: Date.now()
+  }
+  targetSession.lastActivity = Date.now()
+
+  logger.info('File retention updated', {
+    fileId,
+    uploadId: targetSession.uploadId,
+    retrievalKey: updatedRetrievalKey
+  })
+
+  return targetSession
+}
+
+/**
  * Store form data for Azure JSON upload
  */
 export function storeFormData(uploadId, formData) {
@@ -260,7 +320,10 @@ const uploadSessionManager = {
   incrementAttempts,
   getActiveCount,
   getSessionsByStatus,
-  getHealthMetrics
+  getHealthMetrics,
+  updateFileRetention,
+  storeFormData,
+  getFormData
 }
 
 export default uploadSessionManager
