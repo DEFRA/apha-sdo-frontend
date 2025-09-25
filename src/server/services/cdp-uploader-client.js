@@ -352,7 +352,14 @@ async function makeApiRequest(method, endpoint, body = null) {
     }
   }
 
-  throw lastError
+  // Ensure we throw a proper Error object, not a raw response
+  if (lastError instanceof Error) {
+    throw lastError
+  } else {
+    throw new Error(
+      `CDP API request failed: ${lastError?.message || 'Unknown error'}`
+    )
+  }
 }
 
 async function downloadFile(s3Key) {

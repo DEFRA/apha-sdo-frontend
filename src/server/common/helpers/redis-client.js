@@ -60,7 +60,11 @@ export function buildRedisClient(redisConfig) {
   })
 
   redisClient.on('error', (error) => {
-    logger.error(`Redis connection error ${error}`)
+    logger.error('Redis connection error', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    })
   })
 
   return redisClient
