@@ -74,7 +74,7 @@ export const definition = {
           options: {
             required: true,
             accept:
-              'text/csv, application/vnd.openxmlformats, officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet'
+              'text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet'
           }
         }
       ],
