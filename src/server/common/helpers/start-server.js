@@ -16,7 +16,11 @@ async function startServer() {
   } catch (error) {
     const logger = createLogger()
     logger.info('Server failed to start :(')
-    logger.error(error)
+    logger.error('Server startup error', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    })
   }
 
   return server

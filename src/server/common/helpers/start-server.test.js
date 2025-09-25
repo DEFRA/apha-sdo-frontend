@@ -99,9 +99,11 @@ describe('#startServer', () => {
       const server = await startServerImport.startServer()
 
       expect(mockLoggerInfo).toHaveBeenCalledWith('Server failed to start :(')
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        new Error('Server failed to start')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith('Server startup error', {
+        message: 'Server failed to start',
+        stack: expect.any(String),
+        code: undefined
+      })
       expect(server).toBeUndefined()
     })
   })
