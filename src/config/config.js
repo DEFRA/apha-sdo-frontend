@@ -220,6 +220,30 @@ export const config = convict({
       env: 'TRACING_HEADER'
     }
   },
+  uploaderUrl: {
+    doc: 'CDP Uploader service URL',
+    format: 'url',
+    default: 'https://cdp-uploader-frontend.cdp-int.defra.cloud',
+    env: 'UPLOADER_URL'
+  },
+  submissionUrl: {
+    doc: 'Form submission callback URL',
+    format: 'url',
+    default: 'https://apha-sdo-frontend.cdp-int.defra.cloud',
+    env: 'SUBMISSION_URL'
+  },
+  uploaderBucketName: {
+    doc: 'S3 bucket name for uploads',
+    format: String,
+    default: 'apha-sdo-uploads',
+    env: 'UPLOADER_BUCKET_NAME'
+  },
+  stagingPrefix: {
+    doc: 'Staging path prefix for uploaded files',
+    format: String,
+    default: 'staging/',
+    env: 'STAGING_PREFIX'
+  },
   cdpUploader: {
     baseUrl: {
       doc: 'CDP-Uploader service base URL',
