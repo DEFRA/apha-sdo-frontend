@@ -122,6 +122,68 @@ const formSubmissionService = {
     }
   },
 
+  persistFiles: async (files, updatedRetrievalKey) => {
+    logger.info('Persisting file retention', {
+      fileCount: files.length,
+      retrievalKey: updatedRetrievalKey
+    })
+
+    try {
+      // Process each file to extend its retention period
+      const promises = files.map(async (file) => {
+        try {
+          // Update the file's retrieval key for extended retention
+          // This ensures files remain available until form submission is complete
+          await uploadSessionManager.updateFileRetention(
+            file.fileId,
+            updatedRetrievalKey
+          )
+
+          logger.info('File retention extended', {
+            fileId: file.fileId,
+            originalKey: file.initiatedRetrievalKey,
+            newKey: updatedRetrievalKey
+          })
+
+          return {
+            fileId: file.fileId,
+            status: 'persisted',
+            retrievalKey: updatedRetrievalKey
+          }
+        } catch (error) {
+          logger.error('Failed to persist file', {
+            fileId: file.fileId,
+            error: error.message
+          })
+          return {
+            fileId: file.fileId,
+            status: 'failed',
+            error: error.message
+          }
+        }
+      })
+
+      const results = await Promise.all(promises)
+
+      // Check if any files failed to persist
+      const failures = results.filter((r) => r.status === 'failed')
+      if (failures.length > 0) {
+        logger.warn('Some files failed to persist', {
+          failedCount: failures.length,
+          totalCount: files.length
+        })
+      }
+
+      return results
+    } catch (error) {
+      logger.error('File persistence operation failed', {
+        error: error.message,
+        fileCount: files.length
+      })
+      throw error
+    }
+  },
+
   getUploadStatus: async (uploadId) => {
     try {
       return await uploadService.getUploadStatus(uploadId)
