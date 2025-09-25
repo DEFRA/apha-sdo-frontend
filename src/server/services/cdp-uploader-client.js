@@ -63,7 +63,7 @@ export async function initiateUpload(uploadOptions) {
     allowedMimeTypes: mimeTypes,
     maxFileSize,
     metadata: metadata || {},
-    callbackUrl: callbackUrl || `${state.baseUrl}/callback/upload`
+    callbackUrl: callbackUrl || `${state.submissionUrl}/file-upload-callback`
   }
 
   try {

@@ -148,7 +148,7 @@ describe('CDP Uploader Client', () => {
 
       const callBody = JSON.parse(global.fetch.mock.calls[0][1].body)
       expect(callBody.callbackUrl).toBe(
-        'https://test-cdp-uploader.gov.uk/callback/upload'
+        'https://test-submission.gov.uk/file-upload-callback'
       )
     })
 
