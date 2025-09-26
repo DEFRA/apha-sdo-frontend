@@ -7,6 +7,7 @@ import { oidcSignin } from './oidc-signin/index.js'
 import { portal } from './portal/index.js'
 import { signout } from './signout/index.js'
 import { management } from './management/index.js'
+import { uploadPlugin } from './upload/index.js'
 import { serveStaticFiles } from './common/helpers/serve-static-files.js'
 
 export const router = {
@@ -25,7 +26,8 @@ export const router = {
         oidcSignin,
         portal,
         signout,
-        management
+        management,
+        uploadPlugin
       ])
 
       // Static assets

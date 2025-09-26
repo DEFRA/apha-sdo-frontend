@@ -212,6 +212,82 @@ export const config = convict({
       default: isDevelopment
     }
   },
+  storage: {
+    cdpUploader: {
+      endpoint: {
+        doc: 'CDP Uploader service endpoint',
+        format: String,
+        default: 'https://cdp-uploader.service.gov.uk',
+        env: 'CDP_UPLOADER_ENDPOINT'
+      },
+      apiKey: {
+        doc: 'CDP Uploader API key',
+        format: String,
+        default: '',
+        env: 'CDP_UPLOADER_API_KEY',
+        sensitive: true
+      }
+    },
+    s3: {
+      bucket: {
+        doc: 'S3 bucket name',
+        format: String,
+        default: 'apha-sdo-uploads',
+        env: 'S3_BUCKET_NAME'
+      },
+      region: {
+        doc: 'AWS region',
+        format: String,
+        default: 'eu-west-2',
+        env: 'AWS_REGION'
+      },
+      accessKeyId: {
+        doc: 'AWS access key ID',
+        format: String,
+        default: '',
+        env: 'AWS_ACCESS_KEY_ID',
+        sensitive: true
+      },
+      secretAccessKey: {
+        doc: 'AWS secret access key',
+        format: String,
+        default: '',
+        env: 'AWS_SECRET_ACCESS_KEY',
+        sensitive: true
+      }
+    },
+    azure: {
+      connectionString: {
+        doc: 'Azure Storage connection string',
+        format: String,
+        default: '',
+        env: 'AZURE_STORAGE_CONNECTION_STRING',
+        sensitive: true
+      },
+      containerName: {
+        doc: 'Azure blob container name',
+        format: String,
+        default: 'uploads',
+        env: 'AZURE_CONTAINER_NAME'
+      }
+    },
+    maxFileSize: {
+      doc: 'Maximum file upload size in bytes',
+      format: Number,
+      default: 52428800, // 50MB
+      env: 'MAX_FILE_SIZE'
+    },
+    allowedMimeTypes: {
+      doc: 'Allowed file MIME types for uploads',
+      format: Array,
+      default: [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls
+        'text/csv' // .csv
+      ],
+      env: 'ALLOWED_MIME_TYPES'
+    }
+  },
   tracing: {
     header: {
       doc: 'Which header to track',

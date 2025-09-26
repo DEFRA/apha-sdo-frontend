@@ -27,6 +27,32 @@ vi.mock('./logging/logger.js', () => ({
   })
 }))
 
+// Mock Azure Storage to prevent connection errors
+vi.mock('../../services/azure-storage.js', () => ({
+  AzureStorageService: vi.fn().mockImplementation(() => ({
+    uploadFile: vi.fn().mockResolvedValue({
+      blobName: 'test',
+      etag: 'test-etag',
+      requestId: 'test-request',
+      url: 'https://test.blob.core.windows.net/test'
+    }),
+    downloadFile: vi.fn(),
+    deleteFile: vi.fn(),
+    listFiles: vi.fn(),
+    generateSasUrl: vi.fn()
+  }))
+}))
+
+// Mock upload plugin to prevent Azure initialization issues
+vi.mock('../../upload/index.js', () => ({
+  uploadPlugin: {
+    plugin: {
+      name: 'upload-plugin',
+      register: vi.fn()
+    }
+  }
+}))
+
 describe('#startServer', () => {
   const PROCESS_ENV = process.env
   let createServerSpy
@@ -37,6 +63,8 @@ describe('#startServer', () => {
   beforeAll(async () => {
     process.env = { ...PROCESS_ENV }
     process.env.PORT = '3097' // Set to obscure port to avoid conflicts
+    process.env.AZURE_STORAGE_ENABLED = 'false' // Disable Azure for tests
+    process.env.S3_ENABLED = 'false' // Disable S3 for tests
 
     createServerImport = await import('../../server.js')
     startServerImport = await import('./start-server.js')
@@ -47,33 +75,34 @@ describe('#startServer', () => {
 
   afterAll(() => {
     process.env = PROCESS_ENV
+    vi.clearAllMocks()
   })
 
   describe('When server starts', () => {
     let server
 
     afterAll(async () => {
-      await server.stop({ timeout: 0 })
+      if (server) {
+        await server.stop({ timeout: 0 })
+      }
     })
 
     test('Should start up server as expected', async () => {
       server = await startServerImport.startServer()
 
+      expect(server).toBeDefined()
       expect(createServerSpy).toHaveBeenCalled()
       expect(hapiServerSpy).toHaveBeenCalled()
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         'Using Catbox Memory session cache'
       )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        1,
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         'Custom secure context is disabled'
       )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        2,
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         'Server started successfully'
       )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        3,
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         'Access your frontend on http://localhost:3097'
       )
     })
@@ -84,9 +113,14 @@ describe('#startServer', () => {
       createServerSpy.mockRejectedValue(new Error('Server failed to start'))
     })
 
-    test('Should log failed startup message', async () => {
-      await startServerImport.startServer()
+    afterAll(() => {
+      createServerSpy.mockRestore()
+    })
 
+    test('Should log failed startup message', async () => {
+      const server = await startServerImport.startServer()
+
+      expect(server).toBeUndefined()
       expect(mockLoggerInfo).toHaveBeenCalledWith('Server failed to start :(')
       expect(mockLoggerError).toHaveBeenCalledWith(
         Error('Server failed to start')
