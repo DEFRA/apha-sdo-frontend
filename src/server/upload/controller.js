@@ -1,7 +1,6 @@
 import { uploadConfig } from '../../config/upload-config.js'
 import { cdpUploaderService } from './services/cdp-uploader-service.js'
 import { azureStorageService } from './services/azure-storage-service.js'
-import { fileValidationService } from './services/file-validation-service.js'
 import { redisUploadStore } from '../services/redis-upload-store.js'
 
 export const uploadController = {
@@ -9,17 +8,6 @@ export const uploadController = {
     try {
       const { payload } = request
       const logger = request.logger.child({ component: 'upload-controller' })
-
-      const validation = await fileValidationService.validateFile(payload)
-      if (!validation.isValid) {
-        return h
-          .response({
-            success: false,
-            message: 'File validation failed',
-            errors: validation.errors
-          })
-          .code(400)
-      }
 
       const uploadResult = await cdpUploaderService.uploadFile({
         file: payload.file,
@@ -80,16 +68,6 @@ export const uploadController = {
       const { formData, file } = payload
 
       if (file) {
-        const validation = await fileValidationService.validateFile({ file })
-        if (!validation.isValid) {
-          return h
-            .response({
-              success: false,
-              message: 'File validation failed',
-              errors: validation.errors
-            })
-            .code(400)
-        }
         const uploadResult = await cdpUploaderService.uploadFile({
           file,
           metadata: {
@@ -229,7 +207,7 @@ export const uploadController = {
           trackedUpload = {
             ...trackedUpload,
             status: 'callback_received',
-            virusScanStatus: payload.virusScanStatus,
+            ScanStatus: payload.virusScanStatus,
             processedAt: new Date().toISOString()
           }
         }

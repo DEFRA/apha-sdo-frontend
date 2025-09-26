@@ -14,7 +14,6 @@ import {
 
 import { cdpUploaderService } from './upload/services/cdp-uploader-service.js'
 import { azureStorageService } from './upload/services/azure-storage-service.js'
-import { fileValidationService } from './upload/services/file-validation-service.js'
 import { uploadConfig } from '../config/upload-config.js'
 
 const formsService = {
@@ -65,14 +64,6 @@ const formSubmissionService = {
 
   uploadFile: async (file, formId) => {
     try {
-      // Validate the file first
-      const validation = await fileValidationService.validateFile(file)
-      if (!validation.isValid) {
-        throw new Error(
-          `File validation failed: ${validation.errors.join(', ')}`
-        )
-      }
-
       // Upload using CDP uploader service
       const uploadResult = await cdpUploaderService.uploadFile({
         file: file.stream || file,
@@ -133,14 +124,6 @@ const formSubmissionService = {
       delete jsonData.supportingDocuments
 
       if (file) {
-        // Validate the file
-        const validation = await fileValidationService.validateFile(file)
-        if (!validation.isValid) {
-          throw new Error(
-            `File validation failed: ${validation.errors.join(', ')}`
-          )
-        }
-
         const originalFilename =
           file.originalname || file.filename || file.name || 'submission'
         const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
@@ -455,14 +438,6 @@ const outputService = {
 const uploadService = {
   uploadFile: async (file, metadata = {}) => {
     try {
-      // Validate file
-      const validation = await fileValidationService.validateFile(file)
-      if (!validation.isValid) {
-        throw new Error(
-          `File validation failed: ${validation.errors.join(', ')}`
-        )
-      }
-
       // Upload via CDP uploader
       return await cdpUploaderService.uploadFile({
         file: file.stream || file,
@@ -494,10 +469,6 @@ const uploadService = {
 
   deleteFile: async (fileId) => {
     return await formSubmissionService.deleteFile(fileId)
-  },
-
-  validateFile: async (file) => {
-    return await fileValidationService.validateFile(file)
   },
 
   getConfig: () => {
