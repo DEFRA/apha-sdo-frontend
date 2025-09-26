@@ -31,18 +31,18 @@ export const definition = {
   sections: [
     {
       name: 'sample-information',
-      title: 'Sample Information'
+      title: 'Submission information'
     },
     {
       name: 'documentation',
-      title: 'Files Upload'
+      title: 'Files upload'
     }
   ],
   pages: [
     {
       id: 'b1a2c3d4-e5f6-7890-1234-567890fedcb1',
       path: '/sample-details',
-      title: 'Bat Rabies Submission Form',
+      title: 'Bat rabies submission form',
       section: 'sample-information',
       components: [
         {
