@@ -72,9 +72,13 @@ export const definition = {
           title: 'Supporting documents',
           hint: 'Upload laboratory results spreadsheet',
           options: {
-            required: false,
+            required: true,
             accept:
-              'text/csv, application/vnd.openxmlformats, officedocument.spreadsheetml.sheet, application/vnd.oasis.opendocument.spreadsheet'
+              'text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet'
+          },
+          schema: {
+            min: 1,
+            max: 1
           }
         }
       ],
