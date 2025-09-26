@@ -378,6 +378,7 @@ const outputService = {
 
   submit: async (submission) => {
     let formId = 'unknown'
+    let formData = null
 
     try {
       // Validate submission parameter
@@ -387,60 +388,134 @@ const outputService = {
         )
       }
 
-      // Enhanced debugging to understand submission structure
-      console.log('Submission object structure:', {
-        hasMetadata: !!submission.metadata,
-        hasFormId: !!submission.formId,
-        hasId: !!submission.id,
-        hasForm: !!submission.form,
-        hasRequest: !!submission.request,
-        hasFormMetadata: !!submission.formMetadata,
-        hasSlug: !!submission.slug,
-        hasFormSlug: !!submission.formSlug,
-        topLevelKeys: Object.keys(submission).slice(0, 10)
-      })
+      // Check if submission is actually a Hapi request object
+      // The forms-engine-plugin may pass the request object directly
+      const isHapiRequest = !!(
+        submission._core &&
+        submission._route &&
+        submission.headers &&
+        submission.method &&
+        submission.path
+      )
 
-      // The forms-engine-plugin passes the submission object which contains both formId and formData
-      // Try multiple extraction strategies to find the form ID
-      formId = null
+      if (isHapiRequest) {
+        console.log('Detected Hapi request object in outputService.submit')
 
-      // Check for bat-rabies form specifically
-      if (
-        submission.slug === 'bat-rabies' ||
-        submission.formSlug === 'bat-rabies'
-      ) {
-        formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba' // Use the ID from bat-rabies.js metadata
-      } else if (submission.formMetadata?.id) {
-        formId = submission.formMetadata.id
-      } else if (submission.metadata?.id) {
-        formId = submission.metadata.id
-      } else if (submission.formId) {
-        formId = submission.formId
-      } else if (submission.id) {
-        formId = submission.id
-      } else if (submission.form?.id) {
-        formId = submission.form.id
-      } else if (submission.request?.params?.formId) {
-        formId = submission.request.params.formId
-      } else if (submission.request?.params?.slug) {
-        // Try to get form ID from slug
-        const slug = submission.request.params.slug
-        if (slug === 'bat-rabies') {
-          formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
-        } else if (slug === 'example-form') {
-          formId = exampleMetadata.id
-        } else if (slug === 'contact-form') {
-          formId = contactMetadata.id
+        // Extract form data from request payload
+        formData = submission.payload || submission.yar?.get('formData') || {}
+
+        // Try to extract form ID from various locations in the request
+        // 1. Check params first (most reliable)
+        if (submission.params?.slug) {
+          const slug = submission.params.slug
+          console.log(`Found slug in params: ${slug}`)
+
+          if (slug === 'bat-rabies') {
+            formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+          } else if (slug === 'example-form') {
+            formId = exampleMetadata.id
+          } else if (slug === 'contact-form') {
+            formId = contactMetadata.id
+          }
         }
-      }
 
-      const formData = submission.data || submission.payload || submission
+        // 2. Check if form ID is in params directly
+        if (!formId || formId === 'unknown') {
+          if (submission.params?.formId) {
+            formId = submission.params.formId
+          }
+        }
+
+        // 3. Check the route path
+        if (!formId || formId === 'unknown') {
+          const path = submission.path || submission.url?.pathname || ''
+          if (path.includes('bat-rabies')) {
+            formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+          } else if (path.includes('example-form')) {
+            formId = exampleMetadata.id
+          } else if (path.includes('contact-form')) {
+            formId = contactMetadata.id
+          }
+        }
+
+        // 4. Check if formMetadata is stored in session/yar
+        if (!formId || formId === 'unknown') {
+          const formMetadata = submission.yar?.get('formMetadata')
+          if (formMetadata?.id) {
+            formId = formMetadata.id
+          }
+        }
+
+        // 5. Check payload for form metadata
+        if (!formId || formId === 'unknown') {
+          if (formData.formId) {
+            formId = formData.formId
+          } else if (formData.metadata?.id) {
+            formId = formData.metadata.id
+          }
+        }
+
+        console.log(
+          `Extracted from Hapi request - Form ID: ${formId}, Has data: ${!!formData}`
+        )
+      } else {
+        // Handle normal submission object (backward compatibility)
+        console.log('Processing standard submission object')
+
+        // Enhanced debugging to understand submission structure
+        console.log('Submission object structure:', {
+          hasMetadata: !!submission.metadata,
+          hasFormId: !!submission.formId,
+          hasId: !!submission.id,
+          hasForm: !!submission.form,
+          hasRequest: !!submission.request,
+          hasFormMetadata: !!submission.formMetadata,
+          hasSlug: !!submission.slug,
+          hasFormSlug: !!submission.formSlug,
+          topLevelKeys: Object.keys(submission).slice(0, 10)
+        })
+
+        // Try multiple extraction strategies to find the form ID
+        formId = null
+
+        // Check for bat-rabies form specifically
+        if (
+          submission.slug === 'bat-rabies' ||
+          submission.formSlug === 'bat-rabies'
+        ) {
+          formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+        } else if (submission.formMetadata?.id) {
+          formId = submission.formMetadata.id
+        } else if (submission.metadata?.id) {
+          formId = submission.metadata.id
+        } else if (submission.formId) {
+          formId = submission.formId
+        } else if (submission.id) {
+          formId = submission.id
+        } else if (submission.form?.id) {
+          formId = submission.form.id
+        } else if (submission.request?.params?.formId) {
+          formId = submission.request.params.formId
+        } else if (submission.request?.params?.slug) {
+          // Try to get form ID from slug
+          const slug = submission.request.params.slug
+          if (slug === 'bat-rabies') {
+            formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+          } else if (slug === 'example-form') {
+            formId = exampleMetadata.id
+          } else if (slug === 'contact-form') {
+            formId = contactMetadata.id
+          }
+        }
+
+        formData = submission.data || submission.payload || submission
+      }
 
       console.log(
         `Output service submit called - Form ID: ${formId || 'NOT_FOUND'}, Has submission data: ${!!formData}`
       )
 
-      if (!formId) {
+      if (!formId || formId === 'unknown' || formId === 'unknown-form') {
         console.warn(
           'Form ID could not be extracted from submission. Available properties:',
           Object.keys(submission)
@@ -448,17 +523,27 @@ const outputService = {
             .join(', ')
         )
 
-        if (
-          submission.request?.url?.includes('bat-rabies') ||
-          submission.request?.path?.includes('bat-rabies') ||
-          submission.url?.includes('bat-rabies') ||
-          submission.path?.includes('bat-rabies')
-        ) {
-          console.log(
-            'Detected bat-rabies form from URL/path, using hardcoded form ID'
-          )
-          formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
-        } else {
+        // Last resort: check URL/path patterns from multiple sources
+        const urlsToCheck = [
+          submission.url,
+          submission.path,
+          submission.request?.url,
+          submission.request?.path
+        ]
+
+        let formDetected = false
+        for (const url of urlsToCheck) {
+          if (typeof url === 'string' && url.includes('bat-rabies')) {
+            console.log(
+              'Detected bat-rabies form from URL/path, using hardcoded form ID'
+            )
+            formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+            formDetected = true
+            break
+          }
+        }
+
+        if (!formDetected) {
           // Use fallback ID
           formId = 'unknown-form'
         }
