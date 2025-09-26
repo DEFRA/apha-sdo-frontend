@@ -78,6 +78,7 @@ export const definition = {
           }
         }
       ],
+      controller: 'FileUploadPageController',
       next: [{ path: '/summary' }]
     },
     {
