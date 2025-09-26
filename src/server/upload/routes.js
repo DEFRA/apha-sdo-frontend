@@ -7,6 +7,9 @@ const uploadRoutes = (server) => {
       method: 'POST',
       path: '/file',
       options: {
+        plugins: {
+          crumb: false // Disable CSRF for forms engine integration
+        },
         payload: {
           output: 'stream',
           parse: true,
