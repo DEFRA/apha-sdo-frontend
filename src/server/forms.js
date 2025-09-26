@@ -387,11 +387,32 @@ const outputService = {
         )
       }
 
+      // Enhanced debugging to understand submission structure
+      console.log('Submission object structure:', {
+        hasMetadata: !!submission.metadata,
+        hasFormId: !!submission.formId,
+        hasId: !!submission.id,
+        hasForm: !!submission.form,
+        hasRequest: !!submission.request,
+        hasFormMetadata: !!submission.formMetadata,
+        hasSlug: !!submission.slug,
+        hasFormSlug: !!submission.formSlug,
+        topLevelKeys: Object.keys(submission).slice(0, 10)
+      })
+
       // The forms-engine-plugin passes the submission object which contains both formId and formData
       // Try multiple extraction strategies to find the form ID
       formId = null
 
-      if (submission.metadata?.id) {
+      // Check for bat-rabies form specifically
+      if (
+        submission.slug === 'bat-rabies' ||
+        submission.formSlug === 'bat-rabies'
+      ) {
+        formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba' // Use the ID from bat-rabies.js metadata
+      } else if (submission.formMetadata?.id) {
+        formId = submission.formMetadata.id
+      } else if (submission.metadata?.id) {
         formId = submission.metadata.id
       } else if (submission.formId) {
         formId = submission.formId
@@ -401,6 +422,16 @@ const outputService = {
         formId = submission.form.id
       } else if (submission.request?.params?.formId) {
         formId = submission.request.params.formId
+      } else if (submission.request?.params?.slug) {
+        // Try to get form ID from slug
+        const slug = submission.request.params.slug
+        if (slug === 'bat-rabies') {
+          formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+        } else if (slug === 'example-form') {
+          formId = exampleMetadata.id
+        } else if (slug === 'contact-form') {
+          formId = contactMetadata.id
+        }
       }
 
       const formData = submission.data || submission.payload || submission
@@ -416,8 +447,21 @@ const outputService = {
             .filter((key) => key !== 'data' && key !== 'payload')
             .join(', ')
         )
-        // Don't throw error, use fallback ID
-        formId = 'unknown-form'
+
+        if (
+          submission.request?.url?.includes('bat-rabies') ||
+          submission.request?.path?.includes('bat-rabies') ||
+          submission.url?.includes('bat-rabies') ||
+          submission.path?.includes('bat-rabies')
+        ) {
+          console.log(
+            'Detected bat-rabies form from URL/path, using hardcoded form ID'
+          )
+          formId = 'b1a2c3d4-e5f6-7890-1234-567890fedcba'
+        } else {
+          // Use fallback ID
+          formId = 'unknown-form'
+        }
       }
 
       return await formSubmissionService.submit(formData, formId)

@@ -283,7 +283,10 @@ export const config = convict({
       default: [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
-        'text/csv' // .csv
+        'text/csv', // .csv
+        'application/vnd.oasis.opendocument.spreadsheet', // .ods
+        'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
+        'application/vnd.ms-excel.sheet.binary.macroEnabled.12' // .xlsb
       ],
       env: 'ALLOWED_MIME_TYPES'
     }

@@ -32,7 +32,8 @@ const uploadRoutes = (server) => {
           maxBytes: 52428800 // 50MB
         },
         description: 'Upload spreadsheet file via CDP Uploader to S3',
-        notes: 'Validates and uploads .xlsx, .xls, or .csv files',
+        notes:
+          'Validates and uploads .csv, .xls, .xlsx, .ods, .xlsm, or .xlsb files',
         tags: ['api', 'upload']
       },
       handler: (request, h) => uploadController.handleUpload(request, h)
