@@ -27,17 +27,6 @@ export class UploadConfig {
     this.formsEngineConfig = {
       uploadPath: '/upload',
       maxFileSize: this.storageConfig.maxFileSize || 52428800, // 50MB default
-      allowedFileTypes: [
-        '.pdf',
-        '.doc',
-        '.docx',
-        '.xls',
-        '.xlsx',
-        '.jpg',
-        '.jpeg',
-        '.png',
-        '.gif'
-      ],
       uploadDirectory: './uploads'
     }
 

@@ -282,7 +282,10 @@ export const azureStorageService = {
           processingType
         })
       } catch (error) {
-        console.error('Background processing failed:', error)
+        console.error('Background processing failed:', {
+          message: error.message,
+          uploadId: uploadId || 'unknown'
+        })
       }
     }, 1000) // Process after 1 second
 
