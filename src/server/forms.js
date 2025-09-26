@@ -53,12 +53,12 @@ const formSubmissionService = {
     // For now, we'll just return a resolved promise since we're handling file persistence
     // through our own CDP uploader service.
     console.log(
-      `Persisting ${files.length} files with retrieval key: ${persistedRetrievalKey}`
+      `Persisting ${files?.length || 0} files with retrieval key: ${persistedRetrievalKey}`
     )
 
     return Promise.resolve({
       success: true,
-      persistedFiles: files.length,
+      persistedFiles: files?.length || 0,
       retrievalKey: persistedRetrievalKey
     })
   },
@@ -302,7 +302,9 @@ const formSubmissionService = {
           formData.uploadedFiles = uploadResults
         }
 
-        console.log(`Form submission for form ${formId} with uploaded files`)
+        console.log(
+          `Form submission for form ${formId || 'unknown'} with uploaded files`
+        )
         return {
           id: `submission-${Date.now()}`,
           formId,
@@ -364,15 +366,23 @@ const outputService = {
     }
   },
 
-  submit: async (formData, formId) => {
+  submit: async (submission) => {
     try {
+      // The forms-engine-plugin passes the submission object which contains both formId and formData
+      const formId =
+        submission?.metadata?.id || submission?.formId || submission?.id
+      const formData = submission?.data || submission
+
+      console.log('Output service submit called with:', {
+        hasSubmission: !!submission,
+        detectedFormId: formId,
+        submissionKeys: submission ? Object.keys(submission) : []
+      })
+
       // Use the enhanced form submission service
       return await formSubmissionService.submit(formData, formId)
     } catch (error) {
-      console.error(
-        `Output service submission failed for form ${formId}:`,
-        error
-      )
+      console.error(`Output service submission failed:`, error)
       throw error
     }
   }
