@@ -105,7 +105,12 @@ const formSubmissionService = {
         url: `/download/${uploadResult.uploadId}`
       }
     } catch (error) {
-      console.error(`File upload failed for form ${formId}:`, error)
+      console.error(`File upload failed for form ${formId || 'unknown'}:`, {
+        message: error.message,
+        formId: formId || 'unknown',
+        fileName:
+          file?.originalname || file?.filename || file?.name || 'unknown'
+      })
       throw error
     }
   },
@@ -240,8 +245,13 @@ const formSubmissionService = {
       }
     } catch (error) {
       console.error(
-        `File upload with form data failed for form ${formId}:`,
-        error
+        `File upload with form data failed for form ${formId || 'unknown'}:`,
+        {
+          message: error.message,
+          formId: formId || 'unknown',
+          hasFile: !!file,
+          fileName: file?.originalname || file?.filename || file?.name || 'none'
+        }
       )
       throw error
     }
@@ -263,7 +273,10 @@ const formSubmissionService = {
 
       return { success: true }
     } catch (error) {
-      console.error(`File deletion failed for file ${fileId}:`, error)
+      console.error(`File deletion failed for file ${fileId || 'unknown'}:`, {
+        message: error.message,
+        fileId: fileId || 'unknown'
+      })
       throw error
     }
   },
@@ -314,7 +327,15 @@ const formSubmissionService = {
         }
       }
     } catch (error) {
-      console.error(`Form submission failed for form ${formId}:`, error)
+      console.error(`Form submission failed for form ${formId || 'unknown'}:`, {
+        message: error.message,
+        formId: formId || 'unknown',
+        hasFile: !!(
+          formData?.file ||
+          formData?.files ||
+          formData?.supportingDocuments
+        )
+      })
       throw error
     }
   },
@@ -343,8 +364,11 @@ const formSubmissionService = {
       throw new Error('No download service available')
     } catch (error) {
       console.error(
-        `Failed to generate download URL for file ${fileId}:`,
-        error
+        `Failed to generate download URL for file ${fileId || 'unknown'}:`,
+        {
+          message: error.message,
+          fileId: fileId || 'unknown'
+        }
       )
       throw error
     }
@@ -359,30 +383,69 @@ const outputService = {
       return await formSubmissionService.submit(formData, formId)
     } catch (error) {
       console.error(
-        `Output service submission failed for form ${formId}:`,
-        error
+        `Output service submission failed for form ${formId || 'unknown'}:`,
+        {
+          message: error.message,
+          formId: formId || 'unknown'
+        }
       )
       throw error
     }
   },
 
   submit: async (submission) => {
+    let formId = 'unknown'
+
     try {
+      // Validate submission parameter
+      if (!submission) {
+        throw new Error(
+          'Submission parameter is required but was null or undefined'
+        )
+      }
+
       // The forms-engine-plugin passes the submission object which contains both formId and formData
-      const formId =
-        submission?.metadata?.id || submission?.formId || submission?.id
-      const formData = submission?.data || submission
+      // Try multiple extraction strategies to find the form ID
+      formId = null
 
-      console.log('Output service submit called with:', {
-        hasSubmission: !!submission,
-        detectedFormId: formId,
-        submissionKeys: submission ? Object.keys(submission) : []
-      })
+      if (submission.metadata?.id) {
+        formId = submission.metadata.id
+      } else if (submission.formId) {
+        formId = submission.formId
+      } else if (submission.id) {
+        formId = submission.id
+      } else if (submission.form?.id) {
+        formId = submission.form.id
+      } else if (submission.request?.params?.formId) {
+        formId = submission.request.params.formId
+      }
 
-      // Use the enhanced form submission service
+      const formData = submission.data || submission.payload || submission
+
+      console.log(
+        `Output service submit called - Form ID: ${formId || 'NOT_FOUND'}, Has submission data: ${!!formData}`
+      )
+
+      if (!formId) {
+        console.warn(
+          'Form ID could not be extracted from submission. Available properties:',
+          Object.keys(submission)
+            .filter((key) => key !== 'data' && key !== 'payload')
+            .join(', ')
+        )
+        // Don't throw error, use fallback ID
+        formId = 'unknown-form'
+      }
+
       return await formSubmissionService.submit(formData, formId)
     } catch (error) {
-      console.error(`Output service submission failed:`, error)
+      console.error(
+        `Output service submission failed for form: ${formId || 'unknown'}`,
+        {
+          message: error.message,
+          stack: error.stack?.split('\n')[0] // Only log first line of stack
+        }
+      )
       throw error
     }
   }
@@ -412,7 +475,11 @@ const uploadService = {
         }
       })
     } catch (error) {
-      console.error('Upload service failed:', error)
+      console.error('Upload service failed:', {
+        message: error.message,
+        fileName:
+          file?.originalname || file?.filename || file?.name || 'unknown'
+      })
       throw error
     }
   },

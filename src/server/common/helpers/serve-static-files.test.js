@@ -51,7 +51,9 @@ describe('#serveStaticFiles', () => {
           throw new Error('Server failed to start')
         }
       } catch (error) {
-        console.error('Server startup failed:', error)
+        console.error('Server startup failed:', {
+          message: error.message
+        })
         throw error
       }
     })
