@@ -5,6 +5,24 @@ const uploadRoutes = (server) => {
   return [
     {
       method: 'POST',
+      path: '/file',
+      options: {
+        payload: {
+          output: 'stream',
+          parse: true,
+          multipart: true,
+          maxBytes: 52428800 // 50MB
+        },
+        description: 'File upload endpoint for forms engine',
+        notes:
+          'Handles file uploads from @defra/forms-engine-plugin FileUploadPageController',
+        tags: ['api', 'upload', 'forms-engine']
+      },
+      handler: (request, h) => uploadController.handleFormSubmission(request, h)
+    },
+
+    {
+      method: 'POST',
       path: '/upload',
       options: {
         payload: {
@@ -43,6 +61,16 @@ const uploadRoutes = (server) => {
       options: {
         description: 'Check upload status',
         tags: ['api', 'upload', 'status']
+      },
+      handler: (request, h) => uploadController.getUploadStatus(request, h)
+    },
+
+    {
+      method: 'GET',
+      path: '/file/{uploadId}',
+      options: {
+        description: 'Check file upload status for forms engine',
+        tags: ['api', 'upload', 'status', 'forms-engine']
       },
       handler: (request, h) => uploadController.getUploadStatus(request, h)
     },
