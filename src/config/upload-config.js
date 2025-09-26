@@ -27,7 +27,8 @@ export class UploadConfig {
     this.formsEngineConfig = {
       uploadPath: '/upload',
       maxFileSize: this.storageConfig.maxFileSize || 52428800, // 50MB default
-      uploadDirectory: './uploads'
+      uploadDirectory: './uploads',
+      allowedFileTypes: ['.csv', '.xls', '.xlsx', '.ods', '.xlsm', '.xlsb'] // Added all supported spreadsheet formats
     }
 
     this._azureBlobClient = null
@@ -52,9 +53,12 @@ export class UploadConfig {
         s3: storageConfig.s3 || {},
         maxFileSize: storageConfig.maxFileSize || 52428800, // 50MB default
         allowedMimeTypes: storageConfig.allowedMimeTypes || [
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/vnd.ms-excel',
-          'text/csv'
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+          'application/vnd.ms-excel', // .xls
+          'text/csv', // .csv
+          'application/vnd.oasis.opendocument.spreadsheet', // .ods
+          'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
+          'application/vnd.ms-excel.sheet.binary.macroEnabled.12' // .xlsb
         ]
       }
     } catch (error) {
@@ -88,9 +92,12 @@ export class UploadConfig {
       },
       maxFileSize: 52428800, // 50MB
       allowedMimeTypes: [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
-        'text/csv'
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls
+        'text/csv', // .csv
+        'application/vnd.oasis.opendocument.spreadsheet', // .ods
+        'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
+        'application/vnd.ms-excel.sheet.binary.macroEnabled.12' // .xlsb
       ]
     }
   }
@@ -216,6 +223,7 @@ export class UploadConfig {
       uploadPath: this.formsEngineConfig.uploadPath,
       maxFileSize: this.formsEngineConfig.maxFileSize,
       allowedFileTypes: this.formsEngineConfig.allowedFileTypes,
+      allowedMimeTypes: this.storageConfig.allowedMimeTypes,
       uploadDirectory: this.formsEngineConfig.uploadDirectory
     }
   }
