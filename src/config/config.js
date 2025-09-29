@@ -286,7 +286,9 @@ export const config = convict({
         'text/csv', // .csv
         'application/vnd.oasis.opendocument.spreadsheet', // .ods
         'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
-        'application/vnd.ms-excel.sheet.binary.macroEnabled.12' // .xlsb
+        'application/vnd.ms-excel.sheet.macroenabled.12', // .xlsm (lowercase variant)
+        'application/vnd.ms-excel.sheet.binary.macroEnabled.12', // .xlsb
+        'application/octet-stream' // Generic binary (will rely on extension check)
       ],
       env: 'ALLOWED_MIME_TYPES'
     }
