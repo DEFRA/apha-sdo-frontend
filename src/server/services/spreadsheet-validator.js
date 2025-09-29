@@ -22,12 +22,12 @@ class SpreadsheetValidator {
       file.mimetype || lookup(file.originalname) || 'application/octet-stream'
     if (!this.allowedMimeTypes.includes(mimeType)) {
       errors.push(
-        `File type ${mimeType} is not allowed. Supported types: .xlsx, .xls, .csv`
+        `File type ${mimeType} is not allowed. Supported types: .csv, .xls, .xlsx, .ods, .xlsm, .xlsb`
       )
     }
 
     const extension = file.originalname.toLowerCase().split('.').pop()
-    const validExtensions = ['xlsx', 'xls', 'csv']
+    const validExtensions = ['xlsx', 'xls', 'csv', 'ods', 'xlsm', 'xlsb']
     if (!validExtensions.includes(extension)) {
       errors.push(`File extension .${extension} is not supported`)
     }
@@ -51,6 +51,9 @@ class SpreadsheetValidator {
       switch (extension) {
         case 'xlsx':
         case 'xls':
+        case 'xlsm':
+        case 'xlsb':
+        case 'ods':
           return await this.validateExcelContent(buffer)
         case 'csv':
           return await this.validateCsvContent(buffer)

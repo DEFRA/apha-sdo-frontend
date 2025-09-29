@@ -13,7 +13,7 @@ export const azureStorageService = {
       )
 
       await containerClient.createIfNotExists({
-        access: 'private'
+        access: 'blob'
       })
 
       const blobName = `${uploadId}/${metadata.originalName || file.originalname || file.hapi?.filename || 'unnamed-file'}`
