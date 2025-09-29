@@ -39,12 +39,7 @@ describe('azureStorageService', () => {
           etag: '"test-etag"',
           lastModified: new Date()
         }),
-        url: 'https://test.blob.core.windows.net/test-container/test.xlsx',
-        generateSasUrl: vi
-          .fn()
-          .mockResolvedValue(
-            'https://test.blob.core.windows.net/test-container/test.xlsx?sv=2024&sig=abc123'
-          )
+        url: 'https://test.blob.core.windows.net/test-container/test.xlsx'
       }
 
       const mockContainerClient = {
@@ -70,7 +65,6 @@ describe('azureStorageService', () => {
 
       // Assert
       expect(mockContainerClient.createIfNotExists).toHaveBeenCalledWith()
-      // Ensure createIfNotExists is NOT called with access: 'blob'
       expect(mockContainerClient.createIfNotExists).not.toHaveBeenCalledWith({
         access: 'blob'
       })
@@ -90,23 +84,18 @@ describe('azureStorageService', () => {
         })
       )
 
-      expect(mockBlockBlobClient.generateSasUrl).toHaveBeenCalledWith({
-        permissions: 'r',
-        expiresOn: expect.any(Date)
-      })
-
       expect(result).toMatchObject({
         success: true,
         uploadId,
         blobName: file.originalname,
-        url: expect.stringContaining('?sv=2024&sig=abc123'),
+        url: 'https://test.blob.core.windows.net/test-container/test.xlsx',
         plainUrl: 'https://test.blob.core.windows.net/test-container/test.xlsx',
         size: file.buffer.length,
         contentType: file.mimetype
       })
     })
 
-    it('should handle SAS URL generation failure gracefully', async () => {
+    it('should upload file with service principal authentication', async () => {
       // Arrange
       const uploadId = 'test-upload-456'
       const file = {
@@ -120,10 +109,7 @@ describe('azureStorageService', () => {
           etag: '"test-etag"',
           lastModified: new Date()
         }),
-        url: 'https://test.blob.core.windows.net/test-container/test.csv',
-        generateSasUrl: vi
-          .fn()
-          .mockRejectedValue(new Error('No account key available'))
+        url: 'https://test.blob.core.windows.net/test-container/test.csv'
       }
 
       const mockContainerClient = {
@@ -147,7 +133,7 @@ describe('azureStorageService', () => {
       expect(result).toMatchObject({
         success: true,
         uploadId,
-        url: 'https://test.blob.core.windows.net/test-container/test.csv', // Falls back to plain URL
+        url: 'https://test.blob.core.windows.net/test-container/test.csv',
         plainUrl: 'https://test.blob.core.windows.net/test-container/test.csv'
       })
     })
@@ -199,12 +185,7 @@ describe('azureStorageService', () => {
           etag: '"test-etag"',
           lastModified: new Date()
         }),
-        url: 'https://test.blob.core.windows.net/test-container/test-file',
-        generateSasUrl: vi
-          .fn()
-          .mockResolvedValue(
-            'https://test.blob.core.windows.net/test-container/test-file?sv=2024&sig=abc123'
-          )
+        url: 'https://test.blob.core.windows.net/test-container/test-file'
       }
 
       const mockContainerClient = {
