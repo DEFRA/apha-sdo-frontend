@@ -98,7 +98,7 @@ describe('azureStorageService', () => {
       expect(result).toMatchObject({
         success: true,
         uploadId,
-        blobName: `${uploadId}/${file.originalname}`,
+        blobName: file.originalname,
         url: expect.stringContaining('?sv=2024&sig=abc123'),
         plainUrl: 'https://test.blob.core.windows.net/test-container/test.xlsx',
         size: file.buffer.length,
@@ -235,22 +235,16 @@ describe('azureStorageService', () => {
         { type: 'form-data', relatedSpreadsheet: 'data.xlsx' }
       )
 
-      // Assert - Both files should be in the same folder (same uploadId prefix)
-      expect(spreadsheetResult.blobName).toBe(
-        `${uploadId}/${spreadsheetFile.originalname}`
-      )
-      expect(jsonResult.blobName).toBe(`${uploadId}/${jsonFile.originalname}`)
+      // Assert - Both files should be in the root folder
+      expect(spreadsheetResult.blobName).toBe(spreadsheetFile.originalname)
+      expect(jsonResult.blobName).toBe(jsonFile.originalname)
 
-      // Verify the folder structure is the same (both start with uploadId/)
-      expect(spreadsheetResult.blobName).toMatch(new RegExp(`^${uploadId}/`))
-      expect(jsonResult.blobName).toMatch(new RegExp(`^${uploadId}/`))
-
-      // Verify getBlockBlobClient was called with correct paths
+      // Verify getBlockBlobClient was called with correct paths (root level)
       expect(mockContainerClient.getBlockBlobClient).toHaveBeenCalledWith(
-        `${uploadId}/data.xlsx`
+        'data.xlsx'
       )
       expect(mockContainerClient.getBlockBlobClient).toHaveBeenCalledWith(
-        `${uploadId}/data.json`
+        'data.json'
       )
     })
   })
