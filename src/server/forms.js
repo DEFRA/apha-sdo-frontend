@@ -64,13 +64,40 @@ const formSubmissionService = {
 
   uploadFile: async (file, formId) => {
     try {
-      // Upload using CDP uploader service
+      const originalFilename =
+        file.originalname || file.filename || file.name || 'unnamed-file'
+      const contentType =
+        file.mimetype || file.type || 'application/octet-stream'
+
+      // Convert stream to buffer once for both uploads (CDP and Azure)
+      let fileBuffer
+      if (Buffer.isBuffer(file)) {
+        fileBuffer = file
+      } else if (file.buffer && Buffer.isBuffer(file.buffer)) {
+        fileBuffer = file.buffer
+      } else if (file._data && Buffer.isBuffer(file._data)) {
+        fileBuffer = file._data
+      } else if (file.stream || typeof file.on === 'function') {
+        // Convert stream to buffer before any uploads
+        const stream = file.stream || file
+        const chunks = []
+        await new Promise((resolve, reject) => {
+          stream.on('data', (chunk) => chunks.push(chunk))
+          stream.on('end', () => resolve())
+          stream.on('error', reject)
+        })
+        fileBuffer = Buffer.concat(chunks)
+      } else {
+        throw new Error('Invalid file input type')
+      }
+
+      // Upload using CDP uploader service with buffered file
       const uploadResult = await cdpUploaderService.uploadFile({
-        file: file.stream || file,
+        file: fileBuffer,
         metadata: {
-          originalName: file.originalname || file.filename || file.name,
-          contentType: file.mimetype || file.type || 'application/octet-stream',
-          size: file.size || file.length || 0,
+          originalName: originalFilename,
+          contentType,
+          size: fileBuffer.length,
           formId,
           uploadedAt: new Date().toISOString()
         }
@@ -79,12 +106,35 @@ const formSubmissionService = {
       // Also upload to Azure if configured
       if (uploadConfig.azureConfig?.enabled) {
         try {
-          await azureStorageService.uploadFile(uploadResult.uploadId, file)
-        } catch (azureError) {
-          console.warn(
-            'Azure upload failed but CDP upload succeeded:',
-            azureError.message
+          // Create file object with buffer for Azure upload
+          const azureFile = {
+            buffer: fileBuffer,
+            originalname: originalFilename,
+            mimetype: contentType,
+            size: fileBuffer.length
+          }
+
+          await azureStorageService.uploadFile(
+            uploadResult.uploadId,
+            azureFile,
+            {
+              originalName: originalFilename,
+              type: 'spreadsheet'
+            }
           )
+
+          console.info('File uploaded to both CDP and Azure successfully', {
+            uploadId: uploadResult.uploadId,
+            filename: originalFilename,
+            formId: formId || 'unknown'
+          })
+        } catch (azureError) {
+          console.error('Azure upload failed but CDP upload succeeded:', {
+            uploadId: uploadResult.uploadId,
+            filename: originalFilename,
+            formId: formId || 'unknown',
+            error: azureError.message
+          })
         }
       }
 
