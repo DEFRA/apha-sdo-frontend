@@ -21,6 +21,7 @@ export class UploadConfig {
     this.storageConfig = this._initializeStorageConfig()
     this.cdpUploaderConfig = this.storageConfig.cdpUploader || {}
     this.azureConfig = this.storageConfig.azure || {}
+    this.azureConfig.enabled = process.env.AZURE_STORAGE_ENABLED === 'true'
     this.s3Config = this.storageConfig.s3 || {}
 
     // Create forms engine config from storage settings with defaults

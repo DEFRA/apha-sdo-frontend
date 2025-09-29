@@ -76,7 +76,8 @@ const uploadPlugin = {
         return h
           .response({
             error: 'Unsupported file type',
-            message: 'Only .xlsx, .xls, and .csv files are supported'
+            message:
+              'Only .csv, .xls, .xlsx, .ods, .xlsm, and .xlsb files are supported'
           })
           .code(415)
       }
