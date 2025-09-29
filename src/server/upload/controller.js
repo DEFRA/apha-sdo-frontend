@@ -231,7 +231,11 @@ export const uploadController = {
             // Get the stored file buffer from Redis/memory
             if (!trackedUpload?.fileBuffer) {
               logger.error('No file buffer found for upload', {
-                uploadId: payload.uploadId
+                uploadId: payload.uploadId,
+                hasTrackedUpload: !!trackedUpload,
+                trackedUploadKeys: trackedUpload
+                  ? Object.keys(trackedUpload)
+                  : []
               })
               return
             }
@@ -241,17 +245,39 @@ export const uploadController = {
               ? trackedUpload.fileBuffer
               : Buffer.from(trackedUpload.fileBuffer, 'base64')
 
-            // Upload to Azure
+            // Get the original filename (spreadsheet name)
+            const originalFilename =
+              trackedUpload.originalSpreadsheetName ||
+              trackedUpload.filename ||
+              'unnamed-file'
+
+            // Extract base filename to verify it matches the JSON
+            const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
+            const expectedJsonFilename = `${filenameBase}.json`
+
+            logger.info('Uploading spreadsheet to Azure after virus scan', {
+              uploadId: payload.uploadId,
+              spreadsheetFilename: originalFilename,
+              jsonFilename: trackedUpload.jsonFilename,
+              expectedJsonFilename,
+              filenamesMatch:
+                trackedUpload.jsonFilename === expectedJsonFilename,
+              size: fileBuffer.length
+            })
+
+            // Upload spreadsheet to Azure
             const azureResult = await azureStorageService.uploadFile(
               payload.uploadId,
               {
                 buffer: fileBuffer,
-                originalname: trackedUpload?.filename || 'unnamed-file',
+                originalname: originalFilename,
                 mimetype:
                   trackedUpload?.contentType || 'application/octet-stream',
                 size: fileBuffer.length
               },
               {
+                originalName: originalFilename,
+                type: 'spreadsheet',
                 virusScanStatus: 'clean',
                 transferredAt: new Date().toISOString()
               }
@@ -275,7 +301,10 @@ export const uploadController = {
 
             logger.info('Direct Azure transfer completed', {
               uploadId: payload.uploadId,
-              azureBlobName: azureResult.blobName
+              spreadsheetBlobName: azureResult.blobName,
+              jsonBlobName: trackedUpload.jsonFilename,
+              bothFilesHaveSameBaseName:
+                trackedUpload.jsonFilename === expectedJsonFilename
             })
           } catch (error) {
             logger.error('Direct Azure transfer failed', {

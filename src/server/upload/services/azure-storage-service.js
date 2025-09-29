@@ -19,7 +19,7 @@ export const azureStorageService = {
         file.originalname ||
         file.hapi?.filename ||
         'unnamed-file'
-      const blobName = `${uploadId}/${fileName}`
+      const blobName = fileName
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
       let buffer

@@ -15,6 +15,7 @@ import {
 import { cdpUploaderService } from './upload/services/cdp-uploader-service.js'
 import { azureStorageService } from './upload/services/azure-storage-service.js'
 import { uploadConfig } from '../config/upload-config.js'
+import { redisUploadStore } from './services/redis-upload-store.js'
 
 const formsService = {
   getFormMetadata: function (slug) {
@@ -217,28 +218,11 @@ const formSubmissionService = {
         })
 
         // If Azure is enabled, upload both spreadsheet and JSON
+        // NOTE: This uploads immediately, before virus scanning
+        // The callback handler will also upload after virus scan passes
         if (uploadConfig.azureConfig?.enabled) {
           try {
-            // Create file object with buffer for Azure upload
-            const azureFile = {
-              buffer: fileBuffer,
-              originalname: originalFilename,
-              mimetype:
-                file.mimetype || file.type || 'application/octet-stream',
-              size: fileBuffer.length
-            }
-
-            // Upload spreadsheet to Azure
-            await azureStorageService.uploadFile(
-              uploadResult.uploadId,
-              azureFile,
-              {
-                originalName: originalFilename,
-                type: 'spreadsheet'
-              }
-            )
-
-            // Create and upload JSON file with same base name
+            // Create and upload JSON file first (no virus scan needed for JSON)
             const jsonFilename = `${filenameBase}.json`
             const jsonContent = JSON.stringify(jsonData, null, 2)
             const jsonBuffer = Buffer.from(jsonContent, 'utf-8')
@@ -261,13 +245,23 @@ const formSubmissionService = {
               }
             )
 
-            console.log('Both spreadsheet and JSON uploaded to Azure', {
+            console.log('JSON uploaded to Azure immediately', {
               uploadId: uploadResult.uploadId,
+              json: jsonFilename,
               spreadsheet: originalFilename,
-              json: jsonFilename
+              filenameBase,
+              note: 'Spreadsheet will be uploaded after virus scan via callback'
+            })
+
+            // Store JSON filename and spreadsheet name in metadata for later reference
+            // This ensures both files have the same base name
+            await redisUploadStore.updateUpload(uploadResult.uploadId, {
+              jsonFilename,
+              originalSpreadsheetName: originalFilename,
+              filenameBase
             })
           } catch (azureError) {
-            console.warn('Azure upload failed:', azureError.message)
+            console.warn('Azure JSON upload failed:', azureError.message)
           }
         }
 
