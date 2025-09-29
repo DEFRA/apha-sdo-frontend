@@ -75,7 +75,7 @@ export async function createServer() {
   await server.register({
     plugin,
     options: {
-      baseUrl: 'http://localhost:3000',
+      baseUrl: config.get('formsEngine.baseUrl'),
       cacheName: config.get('session.cache.name'), // must match a session you've instantiated in your hapi server config
       /**
        * Options that DXT uses to render Nunjucks templates

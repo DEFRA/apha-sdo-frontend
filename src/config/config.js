@@ -291,6 +291,16 @@ export const config = convict({
       env: 'ALLOWED_MIME_TYPES'
     }
   },
+  formsEngine: {
+    baseUrl: {
+      doc: 'Base URL for forms engine plugin to make requests',
+      format: String,
+      default: isDevelopment
+        ? 'http://localhost:3000'
+        : 'http://localhost:3000',
+      env: 'FORMS_ENGINE_BASE_URL'
+    }
+  },
   tracing: {
     header: {
       doc: 'Which header to track',

@@ -5,16 +5,48 @@ import { redisUploadStore } from '../../services/redis-upload-store.js'
 export class CdpUploaderService {
   async uploadFile({ file, metadata }) {
     const config = uploadConfig.getCdpUploaderConfig()
-    const uploadId = uuidv4()
+    const localUploadId = uuidv4()
+    let cdpUploadId
 
     try {
-      const formData = new FormData()
+      // Initiate upload to get the upload ID from CDP
+      const initiateResponse = await fetch(`${config.url}/initiate`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.callbackAuthToken}`,
+          'Content-Type': 'application/json',
+          'X-Request-ID': localUploadId
+        },
+        body: JSON.stringify({
+          bucket: config.bucket,
+          prefix: config.stagingPrefix,
+          filename: metadata.originalName,
+          contentType: metadata.contentType,
+          callback:
+            process.env.CALLBACK_URL ||
+            (process.env.NODE_ENV === 'development'
+              ? 'http://host.docker.internal:3000/upload/callback'
+              : `${process.env.SUBMISSION_URL || 'http://localhost:3000'}/upload/callback`)
+        }),
+        timeout: config.timeout
+      })
 
+      if (!initiateResponse.ok) {
+        const errorText = await initiateResponse.text()
+        throw new Error(
+          `CDP uploader initiate failed: ${initiateResponse.status} - ${errorText}`
+        )
+      }
+
+      const initiateResult = await initiateResponse.json()
+      cdpUploadId = initiateResult.uploadId || localUploadId
+
+      // Step 2: Upload the file using the upload ID
+      const formData = new FormData()
       const buffer = await this.streamToBuffer(file)
       const blob = new Blob([buffer], { type: metadata.contentType })
 
       formData.append('file', blob, metadata.originalName)
-      formData.append('uploadId', uploadId)
       formData.append('bucket', config.bucket)
       formData.append('prefix', config.stagingPrefix)
 
@@ -23,25 +55,29 @@ export class CdpUploaderService {
         formData.append('metadata', JSON.stringify(metadata))
       }
 
-      // Make request to CDP uploader
-      const response = await fetch(`${config.url}/upload`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${config.callbackAuthToken}`,
-          'X-Request-ID': uploadId
-        },
-        timeout: config.timeout
-      })
+      // Make request to CDP uploader with the upload ID
+      const response = await fetch(
+        `${config.url}/upload-and-scan/${cdpUploadId}`,
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${config.callbackAuthToken}`,
+            'X-Request-ID': localUploadId
+          },
+          timeout: config.timeout
+        }
+      )
 
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(
-          `CDP uploader failed: ${response.status} - ${errorText}`
+          `CDP uploader upload-and-scan failed: ${response.status} - ${errorText}`
         )
       }
 
       const result = await response.json()
+      const uploadId = cdpUploadId
 
       // Store upload information including file buffer for direct Azure upload
       const uploadData = {
@@ -72,15 +108,16 @@ export class CdpUploaderService {
       }
     } catch (error) {
       // Store failed upload for tracking
+      const uploadIdForError = cdpUploadId || localUploadId
       const failedData = {
-        uploadId,
+        uploadId: uploadIdForError,
         filename: metadata.originalName,
         status: 'failed',
         error: error.message,
         uploadedAt: new Date().toISOString()
       }
 
-      await redisUploadStore.setUpload(uploadId, failedData)
+      await redisUploadStore.setUpload(uploadIdForError, failedData)
 
       throw new Error(`Upload failed: ${error.message}`)
     }
