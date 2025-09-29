@@ -18,6 +18,10 @@ RUN npm install
 COPY --chown=node:node --chmod=755 . .
 RUN npm run build:frontend
 
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
+
 CMD [ "npm", "run", "docker:dev" ]
 
 FROM development AS production_build
@@ -47,5 +51,9 @@ RUN npm ci --omit=dev
 ARG PORT
 ENV PORT=${PORT}
 EXPOSE ${PORT}
+
+# Health check for production
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 CMD [ "node", "src" ]
