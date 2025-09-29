@@ -130,14 +130,36 @@ const formSubmissionService = {
         // const timestamp = Date.now()
         // const uniqueBase = `${timestamp}_${filenameBase}`
 
-        // Upload spreadsheet via CDP uploader
+        // Convert stream to buffer once for both uploads
+        let fileBuffer
+        if (Buffer.isBuffer(file)) {
+          fileBuffer = file
+        } else if (file.buffer && Buffer.isBuffer(file.buffer)) {
+          fileBuffer = file.buffer
+        } else if (file._data && Buffer.isBuffer(file._data)) {
+          fileBuffer = file._data
+        } else if (file.stream || typeof file.on === 'function') {
+          // Convert stream to buffer
+          const stream = file.stream || file
+          const chunks = []
+          await new Promise((resolve, reject) => {
+            stream.on('data', (chunk) => chunks.push(chunk))
+            stream.on('end', () => resolve())
+            stream.on('error', reject)
+          })
+          fileBuffer = Buffer.concat(chunks)
+        } else {
+          throw new Error('Invalid file input type')
+        }
+
+        // Upload spreadsheet via CDP uploader using the buffer
         const uploadResult = await cdpUploaderService.uploadFile({
-          file: file.stream || file,
+          file: fileBuffer,
           metadata: {
             originalName: originalFilename,
             contentType:
               file.mimetype || file.type || 'application/octet-stream',
-            size: file.size || file.length || 0,
+            size: fileBuffer.length,
             formId,
             type: 'spreadsheet',
             uploadedAt: jsonData.submittedAt
@@ -147,11 +169,24 @@ const formSubmissionService = {
         // If Azure is enabled, upload both spreadsheet and JSON
         if (uploadConfig.azureConfig?.enabled) {
           try {
+            // Create file object with buffer for Azure upload
+            const azureFile = {
+              buffer: fileBuffer,
+              originalname: originalFilename,
+              mimetype:
+                file.mimetype || file.type || 'application/octet-stream',
+              size: fileBuffer.length
+            }
+
             // Upload spreadsheet to Azure
-            await azureStorageService.uploadFile(uploadResult.uploadId, file, {
-              originalName: originalFilename,
-              type: 'spreadsheet'
-            })
+            await azureStorageService.uploadFile(
+              uploadResult.uploadId,
+              azureFile,
+              {
+                originalName: originalFilename,
+                type: 'spreadsheet'
+              }
+            )
 
             // Create and upload JSON file with same base name
             const jsonFilename = `${filenameBase}.json`

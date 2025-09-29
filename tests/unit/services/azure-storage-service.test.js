@@ -178,5 +178,80 @@ describe('azureStorageService', () => {
       const result = await mockContainerClient.createIfNotExists()
       expect(result).toEqual({ succeeded: true })
     })
+
+    it('should upload spreadsheet and JSON files to the same folder', async () => {
+      // Arrange
+      const uploadId = 'test-upload-789'
+      const spreadsheetFile = {
+        originalname: 'data.xlsx',
+        buffer: Buffer.from('spreadsheet content'),
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }
+      const jsonFile = {
+        originalname: 'data.json',
+        buffer: Buffer.from('{"formData": "test"}'),
+        mimetype: 'application/json'
+      }
+
+      const mockBlockBlobClient = {
+        upload: vi.fn().mockResolvedValue({
+          etag: '"test-etag"',
+          lastModified: new Date()
+        }),
+        url: 'https://test.blob.core.windows.net/test-container/test-file',
+        generateSasUrl: vi
+          .fn()
+          .mockResolvedValue(
+            'https://test.blob.core.windows.net/test-container/test-file?sv=2024&sig=abc123'
+          )
+      }
+
+      const mockContainerClient = {
+        createIfNotExists: vi.fn().mockResolvedValue({ succeeded: true }),
+        getBlockBlobClient: vi.fn().mockReturnValue(mockBlockBlobClient)
+      }
+
+      const mockBlobServiceClient = {
+        getContainerClient: vi.fn().mockReturnValue(mockContainerClient)
+      }
+
+      const { uploadConfig } = await import(
+        '../../../src/config/upload-config.js'
+      )
+      uploadConfig.getAzureBlobClient.mockResolvedValue(mockBlobServiceClient)
+
+      // Act - Upload spreadsheet
+      const spreadsheetResult = await azureStorageService.uploadFile(
+        uploadId,
+        spreadsheetFile,
+        { type: 'spreadsheet' }
+      )
+
+      // Act - Upload JSON with same uploadId
+      const jsonResult = await azureStorageService.uploadFile(
+        uploadId,
+        jsonFile,
+        { type: 'form-data', relatedSpreadsheet: 'data.xlsx' }
+      )
+
+      // Assert - Both files should be in the same folder (same uploadId prefix)
+      expect(spreadsheetResult.blobName).toBe(
+        `${uploadId}/${spreadsheetFile.originalname}`
+      )
+      expect(jsonResult.blobName).toBe(`${uploadId}/${jsonFile.originalname}`)
+
+      // Verify the folder structure is the same (both start with uploadId/)
+      expect(spreadsheetResult.blobName).toMatch(new RegExp(`^${uploadId}/`))
+      expect(jsonResult.blobName).toMatch(new RegExp(`^${uploadId}/`))
+
+      // Verify getBlockBlobClient was called with correct paths
+      expect(mockContainerClient.getBlockBlobClient).toHaveBeenCalledWith(
+        `${uploadId}/data.xlsx`
+      )
+      expect(mockContainerClient.getBlockBlobClient).toHaveBeenCalledWith(
+        `${uploadId}/data.json`
+      )
+    })
   })
 })
