@@ -334,9 +334,14 @@ export class CdpUploaderService {
   }
 
   /**
-   * Convert stream to buffer
+   * Convert stream to buffer (or return buffer if already a buffer)
    */
   async streamToBuffer(stream) {
+    // If it's already a buffer, return it directly
+    if (Buffer.isBuffer(stream)) {
+      return stream
+    }
+
     const chunks = []
 
     return new Promise((resolve, reject) => {
