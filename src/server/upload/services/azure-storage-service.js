@@ -14,7 +14,12 @@ export const azureStorageService = {
 
       await containerClient.createIfNotExists()
 
-      const blobName = `${uploadId}/${metadata.originalName || file.originalname || file.hapi?.filename || 'unnamed-file'}`
+      const fileName =
+        metadata.originalName ||
+        file.originalname ||
+        file.hapi?.filename ||
+        'unnamed-file'
+      const blobName = `${uploadId}/${fileName}`
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
       let buffer
@@ -44,11 +49,7 @@ export const azureStorageService = {
         },
         metadata: {
           uploadId,
-          originalName:
-            metadata.originalName ||
-            file.originalname ||
-            file.hapi?.filename ||
-            'unnamed-file',
+          originalName: fileName,
           uploadedAt: new Date().toISOString(),
           uploadedBy: metadata.uploadedBy || 'system',
           type: metadata.type || 'file',
@@ -111,7 +112,7 @@ export const azureStorageService = {
       const containerClient = blobServiceClient.getContainerClient(
         uploadConfig.azureConfig.containerName
       )
-      const blobName = `${uploadId}/${filename}`
+      const blobName = filename
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
       const downloadResponse = await blockBlobClient.download()
@@ -145,7 +146,7 @@ export const azureStorageService = {
       const containerClient = blobServiceClient.getContainerClient(
         uploadConfig.azureConfig.containerName
       )
-      const blobName = `${uploadId}/${filename}`
+      const blobName = filename
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
       // Check if blob exists
@@ -224,7 +225,7 @@ export const azureStorageService = {
       const containerClient = blobServiceClient.getContainerClient(
         uploadConfig.azureConfig.containerName
       )
-      const blobName = `${uploadId}/${filename}`
+      const blobName = filename
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
       const deleteResponse = await blockBlobClient.deleteIfExists()
@@ -289,7 +290,7 @@ export const azureStorageService = {
         const containerClient = blobServiceClient.getContainerClient(
           uploadConfig.azureConfig.containerName
         )
-        const blobName = `${uploadId}/${filename}`
+        const blobName = filename
         const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
         // Update metadata to mark as processed
