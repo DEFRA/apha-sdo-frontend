@@ -63,36 +63,18 @@ export const azureStorageService = {
         uploadOptions
       )
 
-      // Generate SAS URL for accessing the uploaded file
-      const expiryDate = new Date()
-      expiryDate.setHours(expiryDate.getHours() + 24) // 24 hour expiry for uploaded files
-
-      let sasUrl = blockBlobClient.url // Default to plain URL
-      try {
-        sasUrl = await blockBlobClient.generateSasUrl({
-          permissions: 'r',
-          expiresOn: expiryDate
-        })
-      } catch (sasError) {
-        // If SAS generation fails, continue with plain URL
-        // This might happen if using connection string without account key
-        console.warn(
-          'SAS URL generation failed, using plain URL:',
-          sasError.message
-        )
-      }
+      const blobUrl = blockBlobClient.url
 
       return {
         success: true,
         uploadId,
         blobName,
-        url: sasUrl,
+        url: blobUrl,
         plainUrl: blockBlobClient.url,
         etag: uploadResponse.etag,
         lastModified: uploadResponse.lastModified,
         size: buffer.length,
-        contentType,
-        urlExpiresOn: expiryDate
+        contentType
       }
     } catch (error) {
       throw new Error(`Azure upload failed: ${error.message}`)
@@ -134,7 +116,7 @@ export const azureStorageService = {
   },
 
   /**
-   * Generate SAS URL for direct access
+   * Generate URL for direct access
    */
   async generateSasUrl(uploadId, filename, permissions = 'r', expiryHours = 1) {
     if (!uploadConfig.azureConfig.enabled) {
@@ -155,22 +137,13 @@ export const azureStorageService = {
         throw new Error('File not found')
       }
 
-      // Generate SAS URL
-      const expiryDate = new Date()
-      expiryDate.setHours(expiryDate.getHours() + expiryHours)
-
-      const sasUrl = await blockBlobClient.generateSasUrl({
-        permissions,
-        expiresOn: expiryDate
-      })
-
       return {
         success: true,
-        sasUrl,
-        expiresOn: expiryDate
+        sasUrl: blockBlobClient.url,
+        url: blockBlobClient.url
       }
     } catch (error) {
-      throw new Error(`SAS URL generation failed: ${error.message}`)
+      throw new Error(`URL generation failed: ${error.message}`)
     }
   },
 
