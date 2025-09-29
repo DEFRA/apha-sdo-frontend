@@ -12,9 +12,7 @@ export const azureStorageService = {
         uploadConfig.azureConfig.containerName
       )
 
-      await containerClient.createIfNotExists({
-        access: 'blob'
-      })
+      await containerClient.createIfNotExists()
 
       const blobName = `${uploadId}/${metadata.originalName || file.originalname || file.hapi?.filename || 'unnamed-file'}`
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
@@ -64,15 +62,36 @@ export const azureStorageService = {
         uploadOptions
       )
 
+      // Generate SAS URL for accessing the uploaded file
+      const expiryDate = new Date()
+      expiryDate.setHours(expiryDate.getHours() + 24) // 24 hour expiry for uploaded files
+
+      let sasUrl = blockBlobClient.url // Default to plain URL
+      try {
+        sasUrl = await blockBlobClient.generateSasUrl({
+          permissions: 'r',
+          expiresOn: expiryDate
+        })
+      } catch (sasError) {
+        // If SAS generation fails, continue with plain URL
+        // This might happen if using connection string without account key
+        console.warn(
+          'SAS URL generation failed, using plain URL:',
+          sasError.message
+        )
+      }
+
       return {
         success: true,
         uploadId,
         blobName,
-        url: blockBlobClient.url,
+        url: sasUrl,
+        plainUrl: blockBlobClient.url,
         etag: uploadResponse.etag,
         lastModified: uploadResponse.lastModified,
         size: buffer.length,
-        contentType
+        contentType,
+        urlExpiresOn: expiryDate
       }
     } catch (error) {
       throw new Error(`Azure upload failed: ${error.message}`)

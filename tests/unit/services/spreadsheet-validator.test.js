@@ -49,7 +49,9 @@ vi.mock('../../../src/config/config.js', () => ({
           'text/csv',
           'application/vnd.oasis.opendocument.spreadsheet',
           'application/vnd.ms-excel.sheet.macroEnabled.12',
-          'application/vnd.ms-excel.sheet.binary.macroEnabled.12'
+          'application/vnd.ms-excel.sheet.macroenabled.12',
+          'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+          'application/octet-stream'
         ],
         'storage.maxFileSize': 52428800 // 50MB
       }
@@ -111,6 +113,49 @@ describe('SpreadsheetValidator', () => {
         originalname: 'macro-enabled.xlsm',
         size: 2048000, // 2MB
         mimetype: 'application/vnd.ms-excel.sheet.macroEnabled.12'
+      }
+
+      const result = validator.validateFile(file)
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.fileInfo.extension).toBe('xlsm')
+    })
+
+    test('should accept XLSM files with lowercase MIME type variant', () => {
+      const file = {
+        originalname: 'macro-enabled.xlsm',
+        size: 2048000, // 2MB
+        mimetype: 'application/vnd.ms-excel.sheet.macroenabled.12'
+      }
+
+      const result = validator.validateFile(file)
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.fileInfo.extension).toBe('xlsm')
+    })
+
+    test('should accept XLSM files with generic binary MIME type', () => {
+      const file = {
+        originalname: 'macro-enabled.xlsm',
+        size: 2048000, // 2MB
+        mimetype: 'application/octet-stream'
+      }
+
+      const result = validator.validateFile(file)
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.fileInfo.extension).toBe('xlsm')
+    })
+
+    test('should accept XLSM files even with XLSX MIME type if extension is correct', () => {
+      const file = {
+        originalname: 'macro-enabled.xlsm',
+        size: 2048000, // 2MB
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       }
 
       const result = validator.validateFile(file)

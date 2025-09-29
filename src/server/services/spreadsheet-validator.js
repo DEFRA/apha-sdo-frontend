@@ -18,18 +18,36 @@ class SpreadsheetValidator {
       )
     }
 
-    const mimeType =
-      file.mimetype || lookup(file.originalname) || 'application/octet-stream'
-    if (!this.allowedMimeTypes.includes(mimeType)) {
-      errors.push(
-        `File type ${mimeType} is not allowed. Supported types: .csv, .xls, .xlsx, .ods, .xlsm, .xlsb`
-      )
-    }
-
     const extension = file.originalname.toLowerCase().split('.').pop()
     const validExtensions = ['xlsx', 'xls', 'csv', 'ods', 'xlsm', 'xlsb']
+
+    // Check extension first
     if (!validExtensions.includes(extension)) {
       errors.push(`File extension .${extension} is not supported`)
+    }
+
+    // Get MIME type - use lookup or fallback to provided mimetype
+    const mimeType =
+      file.mimetype || lookup(file.originalname) || 'application/octet-stream'
+
+    // If extension is valid but MIME type is generic/unknown, accept it
+    const isGenericMimeType =
+      mimeType === 'application/octet-stream' ||
+      mimeType === 'application/x-zip-compressed' ||
+      mimeType === 'application/zip'
+
+    // Only validate MIME type if it's not generic OR if extension is invalid
+    if (!isGenericMimeType && !this.allowedMimeTypes.includes(mimeType)) {
+      // If extension is valid, just log a warning but don't reject
+      if (validExtensions.includes(extension)) {
+        console.warn(
+          `File has valid extension .${extension} but unexpected MIME type: ${mimeType}`
+        )
+      } else {
+        errors.push(
+          `File type ${mimeType} is not allowed. Supported types: .csv, .xls, .xlsx, .ods, .xlsm, .xlsb`
+        )
+      }
     }
 
     return {

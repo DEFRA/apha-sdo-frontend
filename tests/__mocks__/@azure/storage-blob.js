@@ -13,17 +13,34 @@ export const mockBlockBlobClient = {
     metadata: { submissionId: 'sub-456' }
   }),
   deleteIfExists: vi.fn().mockResolvedValue({ succeeded: true }),
-  url: 'https://test.blob.core.windows.net/container/file.xlsx'
+  url: 'https://test.blob.core.windows.net/container/file.xlsx',
+  generateSasUrl: vi
+    .fn()
+    .mockResolvedValue(
+      'https://test.blob.core.windows.net/container/file.xlsx?sas-token'
+    ),
+  exists: vi.fn().mockResolvedValue(true),
+  getProperties: vi.fn().mockResolvedValue({
+    metadata: { processed: 'false' }
+  }),
+  setMetadata: vi.fn().mockResolvedValue({ succeeded: true })
 }
 
 export const mockContainerClient = {
-  createIfNotExists: vi.fn().mockResolvedValue({ succeeded: true }),
+  createIfNotExists: vi.fn().mockImplementation((options) => {
+    // Ensure we don't accept public access options
+    if (options && options.access) {
+      throw new Error('Public access is not permitted on this storage account')
+    }
+    return Promise.resolve({ succeeded: true })
+  }),
   getBlockBlobClient: vi.fn(() => mockBlockBlobClient),
   listBlobsFlat: vi.fn(() => ({
     [Symbol.asyncIterator]: async function* () {
       yield* []
     }
-  }))
+  })),
+  exists: vi.fn().mockResolvedValue(true)
 }
 
 export const mockBlobServiceClient = {
