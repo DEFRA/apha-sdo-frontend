@@ -29,10 +29,7 @@ vi.mock('mime-types', () => ({
     const mimeMap = {
       xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       xls: 'application/vnd.ms-excel',
-      csv: 'text/csv',
-      ods: 'application/vnd.oasis.opendocument.spreadsheet',
-      xlsm: 'application/vnd.ms-excel.sheet.macroEnabled.12',
-      xlsb: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12'
+      csv: 'text/csv'
     }
     return mimeMap[ext] || 'application/octet-stream'
   })
@@ -47,10 +44,6 @@ vi.mock('../../../src/config/config.js', () => ({
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'application/vnd.ms-excel',
           'text/csv',
-          'application/vnd.oasis.opendocument.spreadsheet',
-          'application/vnd.ms-excel.sheet.macroEnabled.12',
-          'application/vnd.ms-excel.sheet.macroenabled.12',
-          'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
           'application/octet-stream'
         ],
         'storage.maxFileSize': 52428800 // 50MB
@@ -108,91 +101,6 @@ describe('SpreadsheetValidator', () => {
       expect(result.fileInfo.extension).toBe('csv')
     })
 
-    test('should validate XLSM file successfully', () => {
-      const file = {
-        originalname: 'macro-enabled.xlsm',
-        size: 2048000, // 2MB
-        mimetype: 'application/vnd.ms-excel.sheet.macroEnabled.12'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('xlsm')
-    })
-
-    test('should accept XLSM files with lowercase MIME type variant', () => {
-      const file = {
-        originalname: 'macro-enabled.xlsm',
-        size: 2048000, // 2MB
-        mimetype: 'application/vnd.ms-excel.sheet.macroenabled.12'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('xlsm')
-    })
-
-    test('should accept XLSM files with generic binary MIME type', () => {
-      const file = {
-        originalname: 'macro-enabled.xlsm',
-        size: 2048000, // 2MB
-        mimetype: 'application/octet-stream'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('xlsm')
-    })
-
-    test('should accept XLSM files even with XLSX MIME type if extension is correct', () => {
-      const file = {
-        originalname: 'macro-enabled.xlsm',
-        size: 2048000, // 2MB
-        mimetype:
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('xlsm')
-    })
-
-    test('should validate XLSB file successfully', () => {
-      const file = {
-        originalname: 'binary.xlsb',
-        size: 1536000, // 1.5MB
-        mimetype: 'application/vnd.ms-excel.sheet.binary.macroEnabled.12'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('xlsb')
-    })
-
-    test('should validate ODS file successfully', () => {
-      const file = {
-        originalname: 'spreadsheet.ods',
-        size: 768000, // 768KB
-        mimetype: 'application/vnd.oasis.opendocument.spreadsheet'
-      }
-
-      const result = validator.validateFile(file)
-
-      expect(result.isValid).toBe(true)
-      expect(result.errors).toEqual([])
-      expect(result.fileInfo.extension).toBe('ods')
-    })
-
     test('should reject file exceeding size limit', () => {
       const file = {
         originalname: 'large.xlsx',
@@ -218,7 +126,7 @@ describe('SpreadsheetValidator', () => {
 
       expect(result.isValid).toBe(false)
       expect(result.errors).toContain(
-        'File type application/pdf is not allowed. Supported types: .csv, .xls, .xlsx, .ods, .xlsm, .xlsb'
+        'File type application/pdf is not allowed. Supported types: .csv, .xls, .xlsx'
       )
     })
 

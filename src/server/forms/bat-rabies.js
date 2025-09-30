@@ -70,11 +70,11 @@ export const definition = {
           type: 'FileUploadField',
           name: 'supportingDocuments',
           title: 'Supporting documents',
-          hint: 'Upload laboratory results spreadsheet',
+          hint: 'Upload laboratory results spreadsheet. Only csv, xls and xlsx files are supported.',
           options: {
             required: true,
             accept:
-              '.csv,.xls,.xlsx,.ods,.xlsm,.xlsb,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.sheet.macroenabled.12,application/vnd.ms-excel.sheet.binary.macroEnabled.12,application/octet-stream'
+              '.csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           },
           schema: {
             min: 1,

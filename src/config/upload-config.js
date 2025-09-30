@@ -29,7 +29,7 @@ export class UploadConfig {
       uploadPath: '/upload',
       maxFileSize: this.storageConfig.maxFileSize || 52428800, // 50MB default
       uploadDirectory: './uploads',
-      allowedFileTypes: ['.csv', '.xls', '.xlsx', '.ods', '.xlsm', '.xlsb'] // Added all supported spreadsheet formats
+      allowedFileTypes: ['.csv', '.xls', '.xlsx']
     }
 
     this._azureBlobClient = null
@@ -57,10 +57,6 @@ export class UploadConfig {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
           'application/vnd.ms-excel', // .xls
           'text/csv', // .csv
-          'application/vnd.oasis.opendocument.spreadsheet', // .ods
-          'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
-          'application/vnd.ms-excel.sheet.macroenabled.12', // .xlsm (lowercase variant)
-          'application/vnd.ms-excel.sheet.binary.macroEnabled.12', // .xlsb
           'application/octet-stream' // Generic binary (will rely on extension check)
         ]
       }
@@ -98,10 +94,6 @@ export class UploadConfig {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
         'text/csv', // .csv
-        'application/vnd.oasis.opendocument.spreadsheet', // .ods
-        'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
-        'application/vnd.ms-excel.sheet.macroenabled.12', // .xlsm (lowercase variant)
-        'application/vnd.ms-excel.sheet.binary.macroEnabled.12', // .xlsb
         'application/octet-stream' // Generic binary (will rely on extension check)
       ]
     }

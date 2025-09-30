@@ -19,7 +19,7 @@ class SpreadsheetValidator {
     }
 
     const extension = file.originalname.toLowerCase().split('.').pop()
-    const validExtensions = ['xlsx', 'xls', 'csv', 'ods', 'xlsm', 'xlsb']
+    const validExtensions = ['xlsx', 'xls', 'csv']
 
     // Check extension first
     if (!validExtensions.includes(extension)) {
@@ -45,7 +45,7 @@ class SpreadsheetValidator {
         )
       } else {
         errors.push(
-          `File type ${mimeType} is not allowed. Supported types: .csv, .xls, .xlsx, .ods, .xlsm, .xlsb`
+          `File type ${mimeType} is not allowed. Supported types: .csv, .xls, .xlsx`
         )
       }
     }
@@ -69,9 +69,6 @@ class SpreadsheetValidator {
       switch (extension) {
         case 'xlsx':
         case 'xls':
-        case 'xlsm':
-        case 'xlsb':
-        case 'ods':
           return await this.validateExcelContent(buffer)
         case 'csv':
           return await this.validateCsvContent(buffer)

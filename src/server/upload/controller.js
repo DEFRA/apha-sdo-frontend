@@ -411,15 +411,20 @@ export const uploadController = {
             logger.info('Uploading spreadsheet to Azure after virus scan', {
               uploadId: payload.uploadId,
               spreadsheetFilename,
+              spreadsheetExtension: spreadsheetFilename.match(/\.[^.]+$/)?.[0],
               jsonFilename: trackedUpload.jsonFilename,
+              jsonExtension: trackedUpload.jsonFilename?.match(/\.[^.]+$/)?.[0],
               originalFilename: trackedUpload.originalFilename,
+              originalExtension:
+                trackedUpload.originalFilename?.match(/\.[^.]+$/)?.[0],
               timestamp: trackedUpload.timestamp,
               hasMatchingTimestamp,
               size: fileBuffer.length,
               contentType,
               hasContentTypeFromTracked: !!trackedUpload.contentType,
               willUploadWithName: spreadsheetFilename,
-              azureBlobName: spreadsheetFilename
+              azureBlobName: spreadsheetFilename,
+              trackedUploadKeys: Object.keys(trackedUpload || {})
             })
 
             // Upload JSON file first if present (form submissions)
@@ -507,8 +512,15 @@ export const uploadController = {
             logger.info('Direct Azure transfer completed', {
               uploadId: payload.uploadId,
               spreadsheetBlobName: azureResult.blobName,
+              spreadsheetExtension:
+                azureResult.blobName?.match(/\.[^.]+$/)?.[0],
+              spreadsheetUrl: azureResult.url,
               jsonBlobName:
                 jsonAzureResult?.blobName || trackedUpload.jsonFilename,
+              jsonExtension: (
+                jsonAzureResult?.blobName || trackedUpload.jsonFilename
+              )?.match(/\.[^.]+$/)?.[0],
+              jsonUrl: jsonAzureResult?.url,
               originalFilename: trackedUpload.originalFilename,
               timestamp: trackedUpload.timestamp,
               bothFilesHaveSameTimestamp: hasMatchingTimestamp,
