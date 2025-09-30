@@ -47,21 +47,14 @@ export const uploadController = {
       })
 
       try {
-        await redisUploadStore.setUpload(uploadResult.uploadId, {
-          uploadId: uploadResult.uploadId,
-          filename: uploadResult.filename,
+        await redisUploadStore.updateUpload(uploadResult.uploadId, {
           originalSpreadsheetName: timestampedFilename,
           originalFilename,
           timestamp,
-          contentType,
-          s3Key: uploadResult.s3Key,
-          status: 'awaiting_callback',
-          virusScanStatus: 'pending',
-          uploadedAt: new Date().toISOString(),
-          fileBuffer: fileBuffer.toString('base64')
+          status: 'awaiting_callback'
         })
       } catch (redisError) {
-        logger.warn('Failed to store upload data in Redis', {
+        logger.warn('Failed to update upload data in Redis', {
           uploadId: uploadResult.uploadId,
           error: redisError.message
         })
@@ -137,22 +130,15 @@ export const uploadController = {
         })
 
         try {
-          await redisUploadStore.setUpload(uploadResult.uploadId, {
-            uploadId: uploadResult.uploadId,
-            filename: uploadResult.filename,
+          await redisUploadStore.updateUpload(uploadResult.uploadId, {
             originalSpreadsheetName: timestampedFilename,
             originalFilename,
             timestamp,
-            contentType,
-            s3Key: uploadResult.s3Key,
             status: 'awaiting_callback',
-            virusScanStatus: 'pending',
-            formData,
-            uploadedAt: new Date().toISOString(),
-            fileBuffer: fileBuffer.toString('base64')
+            formData
           })
         } catch (redisError) {
-          logger.warn('Failed to store form upload data in Redis', {
+          logger.warn('Failed to update form upload data in Redis', {
             uploadId: uploadResult.uploadId,
             error: redisError.message
           })
@@ -269,7 +255,7 @@ export const uploadController = {
           trackedUpload = {
             ...trackedUpload,
             status: 'callback_received',
-            ScanStatus: payload.virusScanStatus,
+            virusScanStatus: payload.virusScanStatus,
             processedAt: new Date().toISOString()
           }
         }
@@ -292,12 +278,23 @@ export const uploadController = {
           try {
             // Get the stored file buffer from Redis/memory
             if (!trackedUpload?.fileBuffer) {
-              logger.error('No file buffer found for upload', {
-                uploadId: payload.uploadId,
-                hasTrackedUpload: !!trackedUpload,
-                trackedUploadKeys: trackedUpload
-                  ? Object.keys(trackedUpload)
-                  : []
+              logger.error(
+                'No file buffer found for upload - cannot upload to Azure',
+                {
+                  uploadId: payload.uploadId,
+                  hasTrackedUpload: !!trackedUpload,
+                  trackedUploadStatus: trackedUpload?.status,
+                  trackedUploadKeys: trackedUpload
+                    ? Object.keys(trackedUpload)
+                    : [],
+                  virusScanStatus: trackedUpload?.virusScanStatus
+                }
+              )
+
+              // Update status to show buffer missing
+              await redisUploadStore.updateUpload(payload.uploadId, {
+                status: 'buffer_missing',
+                transferError: 'File buffer not found for Azure upload'
               })
               return
             }
@@ -352,7 +349,9 @@ export const uploadController = {
               hasMatchingTimestamp,
               size: fileBuffer.length,
               contentType,
-              hasContentTypeFromTracked: !!trackedUpload.contentType
+              hasContentTypeFromTracked: !!trackedUpload.contentType,
+              willUploadWithName: spreadsheetFilename,
+              azureBlobName: spreadsheetFilename
             })
 
             // Upload JSON file first if present (form submissions)
