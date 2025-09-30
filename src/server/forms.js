@@ -70,6 +70,12 @@ const formSubmissionService = {
       const contentType =
         file.mimetype || file.type || 'application/octet-stream'
 
+      // Generate timestamp-based filename
+      const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
+      const fileExtension = originalFilename.match(/\.[^/.]+$/)?.[0] || ''
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const timestampedFilename = `${filenameBase}_${timestamp}${fileExtension}`
+
       // Convert stream to buffer once for both uploads (CDP and Azure)
       let fileBuffer
       if (Buffer.isBuffer(file)) {
@@ -96,7 +102,7 @@ const formSubmissionService = {
       const uploadResult = await cdpUploaderService.uploadFile({
         file: fileBuffer,
         metadata: {
-          originalName: originalFilename,
+          originalName: timestampedFilename,
           contentType,
           size: fileBuffer.length,
           formId,
@@ -110,7 +116,7 @@ const formSubmissionService = {
           // Create file object with buffer for Azure upload
           const azureFile = {
             buffer: fileBuffer,
-            originalname: originalFilename,
+            originalname: timestampedFilename,
             mimetype: contentType,
             size: fileBuffer.length
           }
@@ -119,20 +125,25 @@ const formSubmissionService = {
             uploadResult.uploadId,
             azureFile,
             {
-              originalName: originalFilename,
+              originalName: timestampedFilename,
+              originalFilename,
+              timestamp,
               type: 'spreadsheet'
             }
           )
 
           console.info('File uploaded to both CDP and Azure successfully', {
             uploadId: uploadResult.uploadId,
-            filename: originalFilename,
+            timestampedFilename,
+            originalFilename,
+            timestamp,
             formId: formId || 'unknown'
           })
         } catch (azureError) {
           console.error('Azure upload failed but CDP upload succeeded:', {
             uploadId: uploadResult.uploadId,
-            filename: originalFilename,
+            timestampedFilename,
+            originalFilename,
             formId: formId || 'unknown',
             error: azureError.message
           })
@@ -178,8 +189,12 @@ const formSubmissionService = {
         const originalFilename =
           file.originalname || file.filename || file.name || 'submission'
         const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
-        // const timestamp = Date.now()
-        // const uniqueBase = `${timestamp}_${filenameBase}`
+        const fileExtension = originalFilename.match(/\.[^/.]+$/)?.[0] || ''
+
+        // Generate timestamp-based filenames
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const timestampedSpreadsheetName = `${filenameBase}_${timestamp}${fileExtension}`
+        const timestampedJsonName = `${filenameBase}_${timestamp}.json`
 
         // Convert stream to buffer once for both uploads
         let fileBuffer
@@ -207,7 +222,7 @@ const formSubmissionService = {
         const uploadResult = await cdpUploaderService.uploadFile({
           file: fileBuffer,
           metadata: {
-            originalName: originalFilename,
+            originalName: timestampedSpreadsheetName,
             contentType:
               file.mimetype || file.type || 'application/octet-stream',
             size: fileBuffer.length,
@@ -223,13 +238,12 @@ const formSubmissionService = {
         if (uploadConfig.azureConfig?.enabled) {
           try {
             // Create and upload JSON file first (no virus scan needed for JSON)
-            const jsonFilename = `${filenameBase}.json`
             const jsonContent = JSON.stringify(jsonData, null, 2)
             const jsonBuffer = Buffer.from(jsonContent, 'utf-8')
 
             const jsonFile = {
               buffer: jsonBuffer,
-              originalname: jsonFilename,
+              originalname: timestampedJsonName,
               mimetype: 'application/json',
               size: jsonBuffer.length
             }
@@ -238,27 +252,31 @@ const formSubmissionService = {
               uploadResult.uploadId,
               jsonFile,
               {
-                originalName: jsonFilename,
+                originalName: timestampedJsonName,
                 contentType: 'application/json',
                 type: 'form-data',
-                relatedSpreadsheet: originalFilename
+                relatedSpreadsheet: timestampedSpreadsheetName,
+                originalFilename,
+                timestamp
               }
             )
 
             console.log('JSON uploaded to Azure immediately', {
               uploadId: uploadResult.uploadId,
-              json: jsonFilename,
-              spreadsheet: originalFilename,
-              filenameBase,
+              json: timestampedJsonName,
+              spreadsheet: timestampedSpreadsheetName,
+              originalFilename,
+              timestamp,
               note: 'Spreadsheet will be uploaded after virus scan via callback'
             })
 
             // Store JSON filename and spreadsheet name in metadata for later reference
-            // This ensures both files have the same base name
+            // This ensures both files have the same timestamp
             await redisUploadStore.updateUpload(uploadResult.uploadId, {
-              jsonFilename,
-              originalSpreadsheetName: originalFilename,
-              filenameBase
+              jsonFilename: timestampedJsonName,
+              originalSpreadsheetName: timestampedSpreadsheetName,
+              originalFilename,
+              timestamp
             })
           } catch (azureError) {
             console.warn('Azure JSON upload failed:', azureError.message)

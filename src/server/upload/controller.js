@@ -245,38 +245,68 @@ export const uploadController = {
               ? trackedUpload.fileBuffer
               : Buffer.from(trackedUpload.fileBuffer, 'base64')
 
-            // Get the original filename (spreadsheet name)
-            const originalFilename =
+            // Validate buffer is not empty
+            if (!fileBuffer || fileBuffer.length === 0) {
+              logger.error('File buffer is empty or corrupted', {
+                uploadId: payload.uploadId,
+                hasBuffer: !!trackedUpload.fileBuffer,
+                bufferType: typeof trackedUpload.fileBuffer,
+                isBufferInstance: Buffer.isBuffer(trackedUpload.fileBuffer)
+              })
+              return
+            }
+
+            // Get the timestamped spreadsheet filename
+            const spreadsheetFilename =
               trackedUpload.originalSpreadsheetName ||
               trackedUpload.filename ||
               'unnamed-file'
 
-            // Extract base filename to verify it matches the JSON
-            const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
-            const expectedJsonFilename = `${filenameBase}.json`
+            // Determine correct content type for spreadsheet
+            const contentType =
+              trackedUpload.contentType ||
+              (spreadsheetFilename.endsWith('.xlsx')
+                ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                : spreadsheetFilename.endsWith('.xls')
+                  ? 'application/vnd.ms-excel'
+                  : spreadsheetFilename.endsWith('.csv')
+                    ? 'text/csv'
+                    : 'application/octet-stream')
+
+            // Extract timestamp from filename to verify it matches the JSON
+            const timestampMatch = spreadsheetFilename.match(
+              /_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)/
+            )
+            const hasMatchingTimestamp =
+              timestampMatch &&
+              trackedUpload.jsonFilename?.includes(timestampMatch[1])
 
             logger.info('Uploading spreadsheet to Azure after virus scan', {
               uploadId: payload.uploadId,
-              spreadsheetFilename: originalFilename,
+              spreadsheetFilename,
               jsonFilename: trackedUpload.jsonFilename,
-              expectedJsonFilename,
-              filenamesMatch:
-                trackedUpload.jsonFilename === expectedJsonFilename,
-              size: fileBuffer.length
+              originalFilename: trackedUpload.originalFilename,
+              timestamp: trackedUpload.timestamp,
+              hasMatchingTimestamp,
+              size: fileBuffer.length,
+              contentType,
+              hasContentTypeFromTracked: !!trackedUpload.contentType
             })
 
-            // Upload spreadsheet to Azure
+            // Upload spreadsheet to Azure with correct content type
             const azureResult = await azureStorageService.uploadFile(
               payload.uploadId,
               {
                 buffer: fileBuffer,
-                originalname: originalFilename,
-                mimetype:
-                  trackedUpload?.contentType || 'application/octet-stream',
+                originalname: spreadsheetFilename,
+                mimetype: contentType,
                 size: fileBuffer.length
               },
               {
-                originalName: originalFilename,
+                originalName: spreadsheetFilename,
+                originalFilename: trackedUpload.originalFilename,
+                timestamp: trackedUpload.timestamp,
+                contentType,
                 type: 'spreadsheet',
                 virusScanStatus: 'clean',
                 transferredAt: new Date().toISOString()
@@ -303,8 +333,9 @@ export const uploadController = {
               uploadId: payload.uploadId,
               spreadsheetBlobName: azureResult.blobName,
               jsonBlobName: trackedUpload.jsonFilename,
-              bothFilesHaveSameBaseName:
-                trackedUpload.jsonFilename === expectedJsonFilename
+              originalFilename: trackedUpload.originalFilename,
+              timestamp: trackedUpload.timestamp,
+              bothFilesHaveSameTimestamp: hasMatchingTimestamp
             })
           } catch (error) {
             logger.error('Direct Azure transfer failed', {

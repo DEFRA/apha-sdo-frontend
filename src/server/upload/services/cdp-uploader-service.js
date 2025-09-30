@@ -239,16 +239,36 @@ export class CdpUploaderService {
       // Convert base64 back to buffer
       const fileBuffer = Buffer.from(uploadData.fileBuffer, 'base64')
 
+      // Validate buffer is not empty
+      if (!fileBuffer || fileBuffer.length === 0) {
+        throw new Error(
+          `File buffer is empty or corrupted for upload ${uploadId}`
+        )
+      }
+
+      // Determine correct content type
+      const filename = uploadData.filename || 'unnamed-file'
+      const contentType =
+        uploadData.contentType ||
+        (filename.endsWith('.xlsx')
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : filename.endsWith('.xls')
+            ? 'application/vnd.ms-excel'
+            : filename.endsWith('.csv')
+              ? 'text/csv'
+              : 'application/octet-stream')
+
       // Upload directly to Azure
       const azureResult = await azureStorageService.uploadFile(
         uploadId,
         {
           buffer: fileBuffer,
-          originalname: uploadData.filename,
-          mimetype: uploadData.contentType,
+          originalname: filename,
+          mimetype: contentType,
           size: fileBuffer.length
         },
         {
+          contentType,
           virusScanStatus: 'clean',
           transferredAt: new Date().toISOString()
         }
