@@ -1,0 +1,974 @@
+openapi: 3.0.3
+info:
+  title: APHA Surveillance Data Submission Portal API
+  description: |
+    API for the Animal and Plant Health Agency (APHA) Surveillance Data Submission Portal.
+
+    This API provides endpoints for:
+    - File upload and processing with virus scanning
+    - Form submission handling
+    - Upload status tracking
+    - Health monitoring
+    - Pipeline management
+
+    ## File Upload Flow
+
+    1. **Upload File** (`POST /upload` or `POST /file`) - Upload spreadsheet file
+    2. **Virus Scanning** - Automatic virus scan via CDP Uploader service
+    3. **CDP Callback** (`POST /upload/callback`) - CDP service notifies scan completion
+    4. **Azure Transfer** - Clean files automatically transferred to Azure Blob Storage
+    5. **Status Check** (`GET /upload/status/{uploadId}`) - Check processing status
+
+    ## Supported File Types
+
+    - CSV (.csv)
+    - Excel 97-2003 (.xls)
+    - Excel 2007+ (.xlsx)
+    - OpenDocument Spreadsheet (.ods)
+    - Excel Macro-Enabled (.xlsm, .xlsb)
+
+    Maximum file size: 50MB
+
+    ## Authentication
+
+    Most endpoints use session-based authentication with CSRF protection.
+    The CDP callback endpoint requires Bearer token authentication.
+
+  version: 0.15.0
+  contact:
+    name: Defra DDTS
+  license:
+    name: OGL-UK-3.0
+    url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://apha-sdo-frontend.defra.gov.uk
+    description: Production server
+
+tags:
+  - name: Upload
+    description: File upload and processing operations
+  - name: Forms
+    description: Form submission with file uploads
+  - name: Status
+    description: Upload status and tracking
+  - name: Pipeline
+    description: Upload pipeline management
+  - name: Health
+    description: Health check endpoints
+  - name: Pages
+    description: Web page endpoints
+  - name: Authentication
+    description: Authentication and session management
+
+paths:
+  /health:
+    get:
+      summary: Service health check
+      description: Platform health check endpoint to verify service is running
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: success
+              example:
+                message: success
+
+  /upload/health:
+    get:
+      summary: Upload service health check
+      description: Check health and configuration of upload services (CDP Uploader, Azure Storage, S3)
+      operationId: getUploadHealth
+      tags:
+        - Health
+        - Upload
+      responses:
+        '200':
+          description: Upload services are healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, unhealthy]
+                    example: healthy
+                  services:
+                    type: object
+                    properties:
+                      cdpUploader:
+                        type: string
+                        enum: [up, down]
+                        example: up
+                      azureStorage:
+                        type: string
+                        enum: [configured, disabled]
+                        example: configured
+                      s3:
+                        type: string
+                        enum: [configured, disabled]
+                        example: disabled
+                  features:
+                    type: object
+                    properties:
+                      directAzureUpload:
+                        type: boolean
+                        example: true
+                      virusScanPolling:
+                        type: boolean
+                        example: true
+                      s3Download:
+                        type: boolean
+                        example: false
+                      fileBufferStorage:
+                        type: boolean
+                        example: true
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2025-09-30T12:00:00.000Z'
+        '503':
+          description: Upload services are unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckError'
+
+  /upload:
+    post:
+      summary: Upload spreadsheet file
+      description: |
+        Upload a spreadsheet file for processing via CDP Uploader service.
+
+        The file will be:
+        1. Uploaded to CDP Uploader staging area
+        2. Scanned for viruses
+        3. If clean, automatically transferred to Azure Blob Storage
+
+        Filenames are automatically timestamped: `{original-name}_{timestamp}.{ext}`
+      operationId: uploadFile
+      tags:
+        - Upload
+      security:
+        - cookieAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Spreadsheet file to upload (CSV, XLS, XLSX, ODS, XLSM, XLSB)
+            encoding:
+              file:
+                contentType:
+                  - text/csv
+                  - application/vnd.ms-excel
+                  - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                  - application/vnd.oasis.opendocument.spreadsheet
+                  - application/vnd.ms-excel.sheet.macroEnabled.12
+                  - application/vnd.ms-excel.sheet.binary.macroEnabled.12
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSuccessResponse'
+              example:
+                success: true
+                uploadId: 550e8400-e29b-41d4-a716-446655440000
+                filename: data_2025-09-30T12-00-00-000Z.xlsx
+                originalFilename: data.xlsx
+                timestamp: '2025-09-30T12:00:00.000Z'
+                message: File uploaded successfully and sent for virus scanning
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /file:
+    post:
+      summary: Upload file via forms engine
+      description: |
+        File upload endpoint specifically for @defra/forms-engine-plugin integration.
+        CSRF protection is disabled for this endpoint to allow forms engine integration.
+
+        This endpoint handles both:
+        - File uploads (multipart/form-data)
+        - CDP callbacks (application/json)
+      operationId: uploadFileFormsEngine
+      tags:
+        - Upload
+        - Forms
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Spreadsheet file to upload
+                formData:
+                  type: object
+                  description: Optional form metadata
+                  properties:
+                    formId:
+                      type: string
+                      description: Form identifier
+                    submissionId:
+                      type: string
+                      description: Submission identifier
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload/form-submission:
+    post:
+      summary: Submit form with file upload
+      description: |
+        Handle form submission with optional file upload.
+        Processes both form data and file attachment.
+      operationId: submitFormWithFile
+      tags:
+        - Forms
+        - Upload
+      security:
+        - cookieAuth: []
+        - csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Optional spreadsheet file
+                formData:
+                  type: object
+                  description: Form submission data
+                  properties:
+                    formId:
+                      type: string
+                      description: Form identifier
+                    submissionId:
+                      type: string
+                      description: Submission identifier
+      responses:
+        '200':
+          description: Form submitted successfully (no file)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  formSubmissionId:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+                    example: Form submitted successfully (no file attached)
+        '201':
+          description: Form with file submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSubmissionSuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload/status/{uploadId}:
+    get:
+      summary: Get upload status
+      description: |
+        Check the status of a file upload.
+
+        Possible statuses:
+        - `awaiting_callback` - Waiting for virus scan results
+        - `callback_received` - Virus scan complete
+        - `completed` - File transferred to Azure
+        - `transfer_failed` - Azure transfer failed
+        - `quarantined` - File failed virus scan
+        - `buffer_missing` - File buffer not found
+      operationId: getUploadStatus
+      tags:
+        - Status
+        - Upload
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          description: Upload identifier (UUID)
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Upload status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStatusResponse'
+              examples:
+                awaiting_scan:
+                  summary: Awaiting virus scan
+                  value:
+                    success: true
+                    uploadId: 550e8400-e29b-41d4-a716-446655440000
+                    status: awaiting_callback
+                    originalFilename: data.xlsx
+                    filename: data_2025-09-30T12-00-00-000Z.xlsx
+                    timestamp: '2025-09-30T12:00:00.000Z'
+                completed:
+                  summary: Upload completed
+                  value:
+                    success: true
+                    uploadId: 550e8400-e29b-41d4-a716-446655440000
+                    status: completed
+                    originalFilename: data.xlsx
+                    filename: data_2025-09-30T12-00-00-000Z.xlsx
+                    timestamp: '2025-09-30T12:00:00.000Z'
+                    virusScanStatus: clean
+                    azureTransferred: true
+                    azureBlobName: data_2025-09-30T12-00-00-000Z.xlsx
+                    azureUrl: https://storage.blob.core.windows.net/uploads/data_2025-09-30T12-00-00-000Z.xlsx
+                quarantined:
+                  summary: File quarantined
+                  value:
+                    success: true
+                    uploadId: 550e8400-e29b-41d4-a716-446655440000
+                    status: quarantined
+                    virusScanStatus: infected
+                    originalFilename: malware.xlsx
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /file/{uploadId}:
+    get:
+      summary: Get file upload status (forms engine)
+      description: Check file upload status for forms engine integration
+      operationId: getFileStatus
+      tags:
+        - Status
+        - Forms
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          description: Upload identifier (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File upload status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload/callback:
+    post:
+      summary: CDP Uploader callback
+      description: |
+        Callback endpoint for CDP Uploader service to notify about virus scan results.
+
+        **Security**: Requires Bearer token authentication.
+
+        When a file passes virus scan (status: clean), it is automatically transferred
+        to Azure Blob Storage in the background.
+      operationId: handleCdpCallback
+      tags:
+        - Upload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CdpCallbackRequest'
+            example:
+              uploadId: 550e8400-e29b-41d4-a716-446655440000
+              status: clean
+              virusScanStatus: clean
+              processedAt: '2025-09-30T12:05:00.000Z'
+      responses:
+        '200':
+          description: Callback processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+              examples:
+                clean:
+                  summary: Clean file - Azure transfer initiated
+                  value:
+                    success: true
+                    message: Callback processed, Azure transfer initiated
+                infected:
+                  summary: Infected file - quarantined
+                  value:
+                    success: true
+                    message: File quarantined, no Azure transfer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload/process/{uploadId}:
+    post:
+      summary: Process upload directly
+      description: |
+        Process an uploaded file directly to Azure without S3.
+        Polls CDP for virus scan status and uploads to Azure when clean.
+
+        Processing is asynchronous - check status endpoint for completion.
+      operationId: processUploadDirectly
+      tags:
+        - Upload
+        - Pipeline
+      security:
+        - cookieAuth: []
+        - csrfToken: []
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          description: Upload identifier (UUID)
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '202':
+          description: Upload processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Upload processing started
+                  uploadId:
+                    type: string
+                    format: uuid
+                  checkStatusUrl:
+                    type: string
+                    example: /upload/status/550e8400-e29b-41d4-a716-446655440000
+        '400':
+          description: Invalid request or file already processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                  virusScanStatus:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload/pipeline/health:
+    get:
+      summary: Pipeline health check
+      description: Check health of upload pipeline orchestrator
+      operationId: getPipelineHealth
+      tags:
+        - Pipeline
+        - Health
+      responses:
+        '200':
+          description: Pipeline is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  healthy:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: running
+                  pendingTransfers:
+                    type: integer
+                    example: 0
+                  lastProcessed:
+                    type: string
+                    format: date-time
+        '503':
+          description: Pipeline is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  healthy:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+
+  /upload/pipeline/trigger:
+    post:
+      summary: Trigger pipeline processing
+      description: Manually trigger the upload pipeline to process pending transfers
+      operationId: triggerPipelineProcessing
+      tags:
+        - Pipeline
+      security:
+        - cookieAuth: []
+        - csrfToken: []
+      responses:
+        '200':
+          description: Processing triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Processing triggered
+
+  /upload/pipeline/retry:
+    post:
+      summary: Retry failed transfers
+      description: Retry all failed Azure transfers in the pipeline
+      operationId: retryFailedTransfers
+      tags:
+        - Pipeline
+      security:
+        - cookieAuth: []
+        - csrfToken: []
+      responses:
+        '200':
+          description: Retry results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  retriedCount:
+                    type: integer
+                    example: 3
+                  successCount:
+                    type: integer
+                    example: 2
+                  failedCount:
+                    type: integer
+                    example: 1
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session cookie for authentication
+
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: |
+        CSRF token for state-changing operations.
+        Token is provided in cookie `crumb` and must be sent in header.
+
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer token for CDP Uploader callbacks
+
+  schemas:
+    UploadSuccessResponse:
+      type: object
+      required:
+        - success
+        - uploadId
+        - filename
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        uploadId:
+          type: string
+          format: uuid
+          description: Unique identifier for this upload
+          example: 550e8400-e29b-41d4-a716-446655440000
+        filename:
+          type: string
+          description: Timestamped filename stored in system
+          example: data_2025-09-30T12-00-00-000Z.xlsx
+        originalFilename:
+          type: string
+          description: Original filename from user
+          example: data.xlsx
+        timestamp:
+          type: string
+          format: date-time
+          description: Upload timestamp (ISO 8601)
+          example: '2025-09-30T12:00:00.000Z'
+        message:
+          type: string
+          example: File uploaded successfully and sent for virus scanning
+
+    FormSubmissionSuccessResponse:
+      type: object
+      required:
+        - success
+        - uploadId
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        uploadId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        filename:
+          type: string
+          example: data_2025-09-30T12-00-00-000Z.xlsx
+        originalFilename:
+          type: string
+          example: data.xlsx
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-09-30T12:00:00.000Z'
+        formSubmissionId:
+          type: string
+          format: uuid
+          example: 660e8400-e29b-41d4-a716-446655440001
+        message:
+          type: string
+          example: Form submitted successfully
+
+    UploadStatusResponse:
+      type: object
+      required:
+        - success
+        - uploadId
+      properties:
+        success:
+          type: boolean
+          example: true
+        uploadId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+            - awaiting_callback
+            - callback_received
+            - completed
+            - transfer_failed
+            - quarantined
+            - buffer_missing
+          description: Current status of the upload
+          example: completed
+        originalFilename:
+          type: string
+          description: Original user filename
+          example: data.xlsx
+        filename:
+          type: string
+          description: System filename with timestamp
+          example: data_2025-09-30T12-00-00-000Z.xlsx
+        originalSpreadsheetName:
+          type: string
+          description: Timestamped spreadsheet filename
+          example: data_2025-09-30T12-00-00-000Z.xlsx
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-09-30T12:00:00.000Z'
+        virusScanStatus:
+          type: string
+          enum: [clean, infected, pending]
+          description: Virus scan result
+          example: clean
+        azureTransferred:
+          type: boolean
+          description: Whether file was transferred to Azure
+          example: true
+        azureBlobName:
+          type: string
+          description: Blob name in Azure Storage
+          example: data_2025-09-30T12-00-00-000Z.xlsx
+        azureUrl:
+          type: string
+          format: uri
+          description: URL to file in Azure Blob Storage
+          example: https://storage.blob.core.windows.net/uploads/data_2025-09-30T12-00-00-000Z.xlsx
+        azureJsonBlobName:
+          type: string
+          description: JSON blob name (for form submissions)
+          example: data_2025-09-30T12-00-00-000Z.json
+        azureJsonUrl:
+          type: string
+          format: uri
+          description: URL to JSON file in Azure Storage
+        transferError:
+          type: string
+          description: Error message if transfer failed
+        processedAt:
+          type: string
+          format: date-time
+          description: When processing completed
+        formData:
+          type: object
+          description: Form submission metadata
+          properties:
+            formId:
+              type: string
+            submissionId:
+              type: string
+
+    CdpCallbackRequest:
+      type: object
+      required:
+        - uploadId
+        - virusScanStatus
+      properties:
+        uploadId:
+          type: string
+          format: uuid
+          description: Upload identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum: [clean, infected, error]
+          description: Overall status
+          example: clean
+        virusScanStatus:
+          type: string
+          enum: [clean, infected, error]
+          description: Virus scan result
+          example: clean
+        processedAt:
+          type: string
+          format: date-time
+          description: When CDP finished processing
+          example: '2025-09-30T12:05:00.000Z'
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Human-readable error message
+          example: Upload failed
+        error:
+          type: string
+          description: Technical error details
+          example: File size exceeds maximum limit
+
+    HealthCheckError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: unhealthy
+        error:
+          type: string
+          description: Error message
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Invalid file format
+            error: File must be CSV, XLS, XLSX, ODS, XLSM, or XLSB
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Authentication required
+            error: Unauthorized
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Access denied
+            error: Insufficient permissions
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Upload not found
+            error: No upload found with the specified ID
+
+    PayloadTooLarge:
+      description: File size exceeds maximum allowed (50MB)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: File too large
+              message:
+                type: string
+                example: File size exceeds the maximum allowed limit of 50MB
+
+    UnsupportedMediaType:
+      description: Unsupported file type
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unsupported file type
+              message:
+                type: string
+                example: Only .csv, .xls, .xlsx, .ods, .xlsm, and .xlsb files are supported
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Internal server error
+            error: An unexpected error occurred
+
+  examples:
+    UploadCSV:
+      summary: Upload CSV file
+      description: Example of uploading a CSV file
+      value:
+        file: (binary content)
+
+    UploadExcel:
+      summary: Upload Excel file
+      description: Example of uploading an XLSX file
+      value:
+        file: (binary content)
+
+    FormSubmissionWithFile:
+      summary: Form submission with file
+      description: Complete form submission with attached spreadsheet
+      value:
+        file: (binary content)
+        formData:
+          formId: surveillance-form-2024
+          submissionId: 770e8400-e29b-41d4-a716-446655440002

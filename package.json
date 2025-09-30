@@ -31,7 +31,8 @@
     "prestart": "npm run build:frontend",
     "start": "NODE_ENV=production node --use-strict .",
     "setup:husky": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",
-    "config:validate": "node scripts/validate-upload-config.js"
+    "config:validate": "node scripts/validate-upload-config.js",
+    "docs:api": "node docs/view-api-docs.js"
   },
   "author": "Defra DDTS",
   "license": "OGL-UK-3.0",

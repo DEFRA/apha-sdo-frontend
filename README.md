@@ -1,201 +1,379 @@
-# CDP Node.js Frontend Template
+# APHA Surveillance Data Submission Portal
 
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DEFRA_cdp-node-frontend-template&metric=coverage)](https://sonarcloud.io/summary/new_code?id=DEFRA_cdp-node-frontend-template)
+A Node.js web application for the Animal and Plant Health Agency (APHA) surveillance data submission system. Built on DEFRA's Core Delivery Platform (CDP) frontend template v1.8.0.
 
-Core delivery platform Node.js Frontend Template.
+## Table of Contents
 
-Using DEFRA frontend template version 1.8.0.
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-- [Requirements](#requirements)
-  - [Node.js](#nodejs)
-- [Server-side Caching](#server-side-caching)
-- [Redis](#redis)
-- [Local Development](#local-development)
-  - [Setup](#setup)
-  - [Development](#development)
-  - [Production](#production)
-  - [Npm scripts](#npm-scripts)
-  - [Update dependencies](#update-dependencies)
-  - [Formatting](#formatting)
-    - [Windows prettier issue](#windows-prettier-issue)
-- [Docker](#docker)
-  - [Development image](#development-image)
-  - [Production image](#production-image)
-  - [Docker Compose](#docker-compose)
-  - [Dependabot](#dependabot)
-  - [SonarCloud](#sonarcloud)
-- [Licence](#licence)
-  - [About the licence](#about-the-licence)
+## Overview
 
-## Requirements
+The APHA Surveillance Data Submission Portal provides a secure web interface for submitting surveillance data. The application is built using:
 
-### Node.js
+- **Framework**: Hapi.js v21.4.0
+- **Template Engine**: Nunjucks v3.2.4
+- **Session Management**: Redis/Memory-based caching via Catbox
+- **File Storage**: Azure Blob Storage, AWS S3, or CDP Uploader
+- **Styling**: GOV.UK Frontend v5.10.2
 
-Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v9`. You will find it
-easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
+## Key Features
 
-To use the correct version of Node.js for this application, via nvm:
+- **Secure File Upload**: Support for Excel (.xlsx, .xls) and CSV, up to 50MB
+- **Multi-Storage Backend**: Flexible storage with Azure Blob, AWS S3, or CDP Uploader
+- **Forms Engine Integration**: Dynamic form rendering using @defra/forms-engine-plugin
+- **Session Management**: Redis-backed sessions in production, memory cache for development
+- **Security**: CSRF protection with Crumb, secure cookie handling, environment-based security contexts
+- **Observability**: Distributed tracing, structured logging (ECS format), and metrics reporting
+- **GOV.UK Design System**: Fully compliant with GOV.UK design patterns
+
+## Architecture
+
+### High-Level Structure
+
+```
+├── src/
+│   ├── client/           # Frontend assets (SCSS, JS)
+│   ├── config/           # Application configuration
+│   │   ├── config.js     # Main configuration using Convict
+│   │   ├── upload-config.js  # File upload validation
+│   │   └── nunjucks/     # Template engine setup
+│   ├── server/
+│   │   ├── common/       # Shared utilities, helpers, logging
+│   │   ├── forms/        # Dynamic form definitions
+│   │   ├── upload/       # File upload handlers
+│   │   ├── services/     # Business logic and external integrations
+│   │   ├── home/         # Home page routes
+│   │   ├── portal/       # Main portal routes
+│   │   ├── contact/      # Contact page
+│   │   ├── health/       # Health check endpoints
+│   │   ├── oidc-signin/  # Authentication flow
+│   │   └── router.js     # Route definitions
+│   └── index.js          # Application entry point
+├── tests/                # Test files
+├── compose/              # Docker Compose configurations
+└── webpack.config.js     # Frontend build configuration
+```
+
+### Technology Stack
+
+| Layer          | Technology                       |
+| -------------- | -------------------------------- |
+| **Runtime**    | Node.js ≥22.16.0                 |
+| **Framework**  | Hapi.js 21.4.0                   |
+| **Templating** | Nunjucks 3.2.4                   |
+| **Styling**    | SASS, GOV.UK Frontend 5.10.2     |
+| **Build**      | Webpack 5.99.9                   |
+| **Testing**    | Vitest 3.2.4                     |
+| **Session**    | Catbox (Redis/Memory)            |
+| **Storage**    | Azure Blob, AWS S3, CDP Uploader |
+| **Logging**    | Pino with ECS format             |
+| **Proxy**      | Undici with ProxyAgent           |
+
+## Prerequisites
+
+### Required
+
+- **Node.js** ≥ v22.16.0
+- **npm** ≥ v9.0.0
+- **Docker** (technically this is optional, but if using Docker, you can upload files to Azure as the callback works)
+
+### Recommended
+
+- **nvm** (Node Version Manager) for easy Node.js version switching
+- **Redis** (for production-like session caching locally)
+
+### Installation
 
 ```bash
-cd cdp-node-frontend-template
+# Install Node.js version manager (if not already installed)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Use the correct Node.js version
+cd apha-sdo-frontend
+nvm install
 nvm use
 ```
 
-## Server-side Caching
+## Quick Start
 
-We use Catbox for server-side caching. By default the service will use CatboxRedis when deployed and CatboxMemory for
-local development.
-You can override the default behaviour by setting the `SESSION_CACHE_ENGINE` environment variable to either `redis` or
-`memory`.
-
-Please note: CatboxMemory (`memory`) is _not_ suitable for production use! The cache will not be shared between each
-instance of the service and it will not persist between restarts.
-
-## Redis
-
-Redis is an in-memory key-value store. Every instance of a service has access to the same Redis key-value store similar
-to how services might have a database (or MongoDB). All frontend services are given access to a namespaced prefixed that
-matches the service name. e.g. `my-service` will have access to everything in Redis that is prefixed with `my-service`.
-
-If your service does not require a session cache to be shared between instances or if you don't require Redis, you can
-disable setting `SESSION_CACHE_ENGINE=false` or changing the default value in `src/config/index.js`.
-
-## Proxy
-
-We are using forward-proxy which is set up by default. To make use of this: `import { fetch } from 'undici'` then
-because of the `setGlobalDispatcher(new ProxyAgent(proxyUrl))` calls will use the ProxyAgent Dispatcher
-
-If you are not using Wreck, Axios or Undici or a similar http that uses `Request`. Then you may have to provide the
-proxy dispatcher:
-
-To add the dispatcher to your own client:
-
-```javascript
-import { ProxyAgent } from 'undici'
-
-return await fetch(url, {
-  dispatcher: new ProxyAgent({
-    uri: proxyUrl,
-    keepAliveTimeout: 10,
-    keepAliveMaxTimeout: 10
-  })
-})
-```
-
-## Local Development
-
-### Setup
-
-Install application dependencies:
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Development
+### 2. Environment Setup
 
-To run the application in `development` mode run:
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your local configuration (see [Configuration](#configuration)).
+
+### 3. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-### Production
+The application will be available at **http://localhost:3000**
 
-To mimic the application running in `production` mode locally run:
+### 4. Build for Production
 
 ```bash
+npm run build:frontend
 npm start
 ```
 
-### Npm scripts
+## Configuration
 
-All available Npm scripts can be seen in [package.json](./package.json)
-To view them in your command line run:
+Configuration is managed via environment variables using Convict. See `src/config/config.js` for all options.
+
+### Essential Environment Variables
+
+| Variable                       | Description                        | Default (Dev)      |
+| ------------------------------ | ---------------------------------- | ------------------ |
+| `NODE_ENV`                     | Environment mode                   | `development`      |
+| `PORT`                         | Server port                        | `3000`             |
+| `HOST`                         | Server host                        | `0.0.0.0`          |
+| `SESSION_CACHE_ENGINE`         | Session backend (`redis`/`memory`) | `memory`           |
+| `SESSION_COOKIE_PASSWORD`      | Cookie encryption key (32+ chars)  | (see config)       |
+| `REDIS_HOST`                   | Redis hostname                     | `127.0.0.1`        |
+| `REDIS_PASSWORD`               | Redis password                     | -                  |
+| `AZURE_STORAGE_ACCOUNT_NAME`   | Azure storage account              | -                  |
+| `AZURE_STORAGE_CONTAINER_NAME` | Azure blob container               | `uploads`          |
+| `AWS_ACCESS_KEY_ID`            | AWS access key                     | -                  |
+| `AWS_SECRET_ACCESS_KEY`        | AWS secret key                     | -                  |
+| `S3_BUCKET_NAME`               | S3 bucket name                     | `apha-sdo-uploads` |
+| `CDP_UPLOADER_ENDPOINT`        | CDP uploader URL                   | -                  |
+| `MAX_FILE_SIZE`                | Max upload size (bytes)            | `52428800` (50MB)  |
+
+### Server-Side Caching
+
+The application uses **Catbox** for session caching:
+
+- **Production**: Uses `CatboxRedis` (shared across instances)
+- **Development**: Uses `CatboxMemory` (single instance only)
+
+Override with `SESSION_CACHE_ENGINE=redis` or `SESSION_CACHE_ENGINE=memory`.
+
+⚠️ **Warning**: `CatboxMemory` is **NOT** suitable for production as sessions are not shared between instances.
+
+## Development
+
+### Available Scripts
+
+View all scripts:
 
 ```bash
 npm run
 ```
 
-### Update dependencies
+#### Common Commands
 
-To update dependencies use [npm-check-updates](https://github.com/raineorshine/npm-check-updates):
+| Command                   | Description                              |
+| ------------------------- | ---------------------------------------- |
+| `npm run dev`             | Start development server with hot reload |
+| `npm run dev:debug`       | Start with Node.js debugger attached     |
+| `npm start`               | Run production build                     |
+| `npm test`                | Run test suite with coverage             |
+| `npm run test:watch`      | Run tests in watch mode                  |
+| `npm run lint`            | Lint JavaScript and SCSS                 |
+| `npm run lint:js:fix`     | Auto-fix linting issues                  |
+| `npm run format`          | Format code with Prettier                |
+| `npm run format:check`    | Check code formatting                    |
+| `npm run build:frontend`  | Build frontend assets                    |
+| `npm run config:validate` | Validate upload configuration            |
 
-> The following script is a good start. Check out all the options on
-> the [npm-check-updates](https://github.com/raineorshine/npm-check-updates)
+### Code Style
 
-```bash
-ncu --interactive --format group
-```
+- **Linting**: ESLint with Neostandard config
+- **Styling**: Stylelint with GDS config
+- **Formatting**: Prettier with custom rules
 
-### Formatting
+#### Windows Prettier Issue
 
-#### Windows prettier issue
-
-If you are having issues with formatting of line breaks on Windows update your global git config by running:
+If you experience line break formatting issues on Windows:
 
 ```bash
 git config --global core.autocrlf false
 ```
 
-## Docker
+### Updating Dependencies
 
-### Development image
-
-> [!TIP]
-> For Apple Silicon users, you may need to add `--platform linux/amd64` to the `docker run` command to ensure
-> compatibility fEx: `docker build --platform=linux/arm64 --no-cache --tag cdp-node-frontend-template`
-
-Build:
+Use [npm-check-updates](https://github.com/raineorshine/npm-check-updates):
 
 ```bash
-docker build --target development --no-cache --tag cdp-node-frontend-template:development .
+ncu --interactive --format group
 ```
 
-Run:
+## Testing
+
+### Test Framework
+
+- **Test Runner**: Vitest 3.2.4
+- **Coverage**: V8 coverage provider
+- **Mocking**: vitest-fetch-mock for HTTP requests
+- **DOM Testing**: Cheerio for HTML parsing
+
+### Running Tests
 
 ```bash
-docker run -p 3000:3000 cdp-node-frontend-template:development
+# Run all tests with coverage
+npm test
+
+# Watch mode for TDD
+npm run test:watch
+
+# Coverage report location
+open coverage/index.html
 ```
 
-### Production image
+### Writing Tests
 
-Build:
+Example test structure:
 
-```bash
-docker build --no-cache --tag cdp-node-frontend-template .
+```javascript
+import { describe, it, expect, beforeEach } from 'vitest'
+
+describe('MyComponent', () => {
+  beforeEach(() => {
+    // Setup
+  })
+
+  it('should do something', () => {
+    // Test implementation
+    expect(result).toBe(expected)
+  })
+})
 ```
 
-Run:
+## Deployment
 
-```bash
-docker run -p 3000:3000 cdp-node-frontend-template
-```
+### Docker
 
 ### Docker Compose
 
-A local environment with:
-
-- Localstack for AWS services (S3, SQS)
-- Redis
-- MongoDB
-- This service.
-- A commented out backend example.
+Local environment with all dependencies:
 
 ```bash
 docker compose up --build -d
 ```
 
+Includes:
+
+- Redis (session storage)
+- LocalStack (AWS S3/SQS emulation)
+- This frontend application
+
+### CDP Platform Deployment
+
+The application is designed for DEFRA's Core Delivery Platform:
+
+1. **Service Version**: Injected via `SERVICE_VERSION` env var
+2. **Health Checks**: Available at `/health`
+3. **Metrics**: Enabled in production via `ENABLE_METRICS`
+4. **Tracing**: Uses `x-cdp-request-id` header
+5. **Logging**: Structured ECS format for centralized logging
+
+## API Documentation
+
+### Endpoints
+
+#### Public Endpoints
+
+| Method | Path       | Description              |
+| ------ | ---------- | ------------------------ |
+| `GET`  | `/`        | Home page                |
+| `GET`  | `/health`  | Health check endpoint    |
+| `GET`  | `/contact` | Contact information page |
+
+#### Authenticated Endpoints
+
+| Method | Path             | Description            |
+| ------ | ---------------- | ---------------------- |
+| `GET`  | `/portal`        | Main portal dashboard  |
+| `GET`  | `/upload`        | File upload form       |
+| `POST` | `/upload`        | Process file upload    |
+| `GET`  | `/forms/:formId` | Dynamic form rendering |
+| `POST` | `/forms/:formId` | Form submission        |
+
+### Health Check Response
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-09-30T12:00:00.000Z",
+  "version": "0.15.0"
+}
+```
+
+### Debug Mode
+
+Run with debugger attached:
+
+```bash
+npm run dev:debug
+```
+
+Then connect with Chrome DevTools or VS Code debugger at `localhost:9229`.
+
+### Logs
+
+Development logs are pretty-printed with `pino-pretty`:
+
+```bash
+npm run dev | grep ERROR
+```
+
+Production logs use ECS format for structured logging.
+
+## Contributing
+
+### Git Workflow
+
+1. Create a feature branch from `main`
+2. Make your changes
+3. Ensure tests pass and code is formatted
+4. Submit a pull request
+
+### Pre-commit Hooks
+
+Husky automatically runs:
+
+- Code formatting checks
+- Linting
+- Tests
+
 ### Dependabot
 
-We have added an example dependabot configuration file to the repository. You can enable it by renaming
-the [.github/example.dependabot.yml](.github/example.dependabot.yml) to `.github/dependabot.yml`
+Dependabot is configured to automatically check for dependency updates. Enable by renaming:
+
+```bash
+mv .github/example.dependabot.yml .github/dependabot.yml
+```
 
 ### SonarCloud
 
-Instructions for setting up SonarCloud can be found in [sonar-project.properties](./sonar-project.properties).
+Quality metrics are tracked via SonarCloud. Configuration is in `sonar-project.properties`.
+
+## Additional Documentation
+
+- [CDP Template Documentation](https://github.com/DEFRA/cdp-node-frontend-template) - Upstream template docs
 
 ## Licence
 
