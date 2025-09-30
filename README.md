@@ -290,8 +290,6 @@ The application is designed for DEFRA's Core Delivery Platform:
 4. **Tracing**: Uses `x-cdp-request-id` header
 5. **Logging**: Structured ECS format for centralized logging
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
-
 ## API Documentation
 
 ### Endpoints
@@ -375,8 +373,6 @@ Quality metrics are tracked via SonarCloud. Configuration is in `sonar-project.p
 
 ## Additional Documentation
 
-- [Setup Guide](docs/SETUP.md) - Detailed setup instructions for different environments
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment procedures
 - [CDP Template Documentation](https://github.com/DEFRA/cdp-node-frontend-template) - Upstream template docs
 
 ## Licence
