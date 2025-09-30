@@ -9,12 +9,31 @@ export const uploadController = {
       const { payload } = request
       const logger = request.logger.child({ component: 'upload-controller' })
 
+      const originalFilename = payload.file.hapi.filename
+      const contentType = payload.file.hapi.headers['content-type']
+
+      // Generate timestamp-based filename
+      const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
+      const fileExtension = originalFilename.match(/\.[^/.]+$/)?.[0] || ''
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const timestampedFilename = `${filenameBase}_${timestamp}${fileExtension}`
+
+      // Convert stream to buffer for both CDP and Azure uploads
+      const stream = payload.file
+      const chunks = []
+      await new Promise((resolve, reject) => {
+        stream.on('data', (chunk) => chunks.push(chunk))
+        stream.on('end', () => resolve())
+        stream.on('error', reject)
+      })
+      const fileBuffer = Buffer.concat(chunks)
+
       const uploadResult = await cdpUploaderService.uploadFile({
-        file: payload.file,
+        file: fileBuffer,
         metadata: {
-          originalName: payload.file.hapi.filename,
-          contentType: payload.file.hapi.headers['content-type'],
-          size: payload.file._readableState?.buffer?.length || 0,
+          originalName: timestampedFilename,
+          contentType,
+          size: fileBuffer.length,
           uploadedBy: request.auth?.credentials?.id || 'anonymous',
           uploadedAt: new Date().toISOString()
         }
@@ -22,17 +41,24 @@ export const uploadController = {
 
       logger.info('File uploaded successfully', {
         uploadId: uploadResult.uploadId,
-        filename: payload.file.hapi.filename
+        timestampedFilename,
+        originalFilename,
+        timestamp
       })
 
       try {
         await redisUploadStore.setUpload(uploadResult.uploadId, {
           uploadId: uploadResult.uploadId,
           filename: uploadResult.filename,
+          originalSpreadsheetName: timestampedFilename,
+          originalFilename,
+          timestamp,
+          contentType,
           s3Key: uploadResult.s3Key,
           status: 'awaiting_callback',
           virusScanStatus: 'pending',
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date().toISOString(),
+          fileBuffer: fileBuffer.toString('base64')
         })
       } catch (redisError) {
         logger.warn('Failed to store upload data in Redis', {
@@ -45,7 +71,9 @@ export const uploadController = {
         .response({
           success: true,
           uploadId: uploadResult.uploadId,
-          filename: uploadResult.filename,
+          filename: timestampedFilename,
+          originalFilename,
+          timestamp,
           message: 'File uploaded successfully and sent for virus scanning'
         })
         .code(201)
@@ -68,9 +96,32 @@ export const uploadController = {
       const { formData, file } = payload
 
       if (file) {
+        const originalFilename = file.hapi?.filename || file.filename
+        const contentType =
+          file.hapi?.headers?.['content-type'] || file.mimetype
+
+        // Generate timestamp-based filename
+        const filenameBase = originalFilename.replace(/\.[^/.]+$/, '')
+        const fileExtension = originalFilename.match(/\.[^/.]+$/)?.[0] || ''
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const timestampedFilename = `${filenameBase}_${timestamp}${fileExtension}`
+
+        // Convert stream to buffer
+        const stream = file.stream || file
+        const chunks = []
+        await new Promise((resolve, reject) => {
+          stream.on('data', (chunk) => chunks.push(chunk))
+          stream.on('end', () => resolve())
+          stream.on('error', reject)
+        })
+        const fileBuffer = Buffer.concat(chunks)
+
         const uploadResult = await cdpUploaderService.uploadFile({
-          file,
+          file: fileBuffer,
           metadata: {
+            originalName: timestampedFilename,
+            contentType,
+            size: fileBuffer.length,
             formId: formData?.formId,
             submissionId: formData?.submissionId,
             uploadedAt: new Date().toISOString()
@@ -79,18 +130,26 @@ export const uploadController = {
 
         logger.info('Form submission with file processed', {
           uploadId: uploadResult.uploadId,
+          timestampedFilename,
+          originalFilename,
+          timestamp,
           formId: formData?.formId
         })
 
         try {
           await redisUploadStore.setUpload(uploadResult.uploadId, {
             uploadId: uploadResult.uploadId,
-            filename: file.hapi?.filename || file.filename,
+            filename: uploadResult.filename,
+            originalSpreadsheetName: timestampedFilename,
+            originalFilename,
+            timestamp,
+            contentType,
             s3Key: uploadResult.s3Key,
             status: 'awaiting_callback',
             virusScanStatus: 'pending',
             formData,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
+            fileBuffer: fileBuffer.toString('base64')
           })
         } catch (redisError) {
           logger.warn('Failed to store form upload data in Redis', {
@@ -103,6 +162,9 @@ export const uploadController = {
           .response({
             success: true,
             uploadId: uploadResult.uploadId,
+            filename: timestampedFilename,
+            originalFilename,
+            timestamp,
             formSubmissionId: formData?.submissionId,
             message: 'Form submitted successfully'
           })
@@ -293,6 +355,48 @@ export const uploadController = {
               hasContentTypeFromTracked: !!trackedUpload.contentType
             })
 
+            // Upload JSON file first if present (form submissions)
+            let jsonAzureResult = null
+            if (trackedUpload.jsonBuffer && trackedUpload.jsonFilename) {
+              try {
+                const jsonBuffer = Buffer.from(
+                  trackedUpload.jsonBuffer,
+                  'base64'
+                )
+
+                jsonAzureResult = await azureStorageService.uploadFile(
+                  payload.uploadId,
+                  {
+                    buffer: jsonBuffer,
+                    originalname: trackedUpload.jsonFilename,
+                    mimetype: 'application/json',
+                    size: jsonBuffer.length
+                  },
+                  {
+                    originalName: trackedUpload.jsonFilename,
+                    contentType: 'application/json',
+                    type: 'form-data',
+                    relatedSpreadsheet: spreadsheetFilename,
+                    originalFilename: trackedUpload.originalFilename,
+                    timestamp: trackedUpload.timestamp,
+                    virusScanStatus: 'clean',
+                    transferredAt: new Date().toISOString()
+                  }
+                )
+
+                logger.info('JSON uploaded to Azure', {
+                  uploadId: payload.uploadId,
+                  jsonBlobName: jsonAzureResult.blobName,
+                  jsonUrl: jsonAzureResult.url
+                })
+              } catch (jsonError) {
+                logger.error('Failed to upload JSON to Azure', {
+                  uploadId: payload.uploadId,
+                  error: jsonError.message
+                })
+              }
+            }
+
             // Upload spreadsheet to Azure with correct content type
             const azureResult = await azureStorageService.uploadFile(
               payload.uploadId,
@@ -308,19 +412,23 @@ export const uploadController = {
                 timestamp: trackedUpload.timestamp,
                 contentType,
                 type: 'spreadsheet',
+                relatedJson: trackedUpload.jsonFilename,
                 virusScanStatus: 'clean',
                 transferredAt: new Date().toISOString()
               }
             )
 
-            // Update tracking and clear the file buffer to save memory
+            // Update tracking and clear the buffers to save memory
             try {
               await redisUploadStore.updateUpload(payload.uploadId, {
                 status: 'completed',
                 azureTransferred: true,
                 azureBlobName: azureResult.blobName,
                 azureUrl: azureResult.url,
-                fileBuffer: null // Clear the buffer after successful upload
+                azureJsonBlobName: jsonAzureResult?.blobName,
+                azureJsonUrl: jsonAzureResult?.url,
+                fileBuffer: null, // Clear the buffer after successful upload
+                jsonBuffer: null // Clear JSON buffer too
               })
             } catch (redisError) {
               logger.warn('Failed to update completed upload status in Redis', {
@@ -332,10 +440,12 @@ export const uploadController = {
             logger.info('Direct Azure transfer completed', {
               uploadId: payload.uploadId,
               spreadsheetBlobName: azureResult.blobName,
-              jsonBlobName: trackedUpload.jsonFilename,
+              jsonBlobName:
+                jsonAzureResult?.blobName || trackedUpload.jsonFilename,
               originalFilename: trackedUpload.originalFilename,
               timestamp: trackedUpload.timestamp,
-              bothFilesHaveSameTimestamp: hasMatchingTimestamp
+              bothFilesHaveSameTimestamp: hasMatchingTimestamp,
+              jsonAlsoUploaded: !!jsonAzureResult
             })
           } catch (error) {
             logger.error('Direct Azure transfer failed', {

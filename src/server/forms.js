@@ -232,54 +232,39 @@ const formSubmissionService = {
           }
         })
 
-        // If Azure is enabled, upload both spreadsheet and JSON
-        // NOTE: This uploads immediately, before virus scanning
-        // The callback handler will also upload after virus scan passes
+        // If Azure is enabled, prepare JSON and store metadata for callback handler
+        // The callback handler will upload both JSON and spreadsheet after virus scan
         if (uploadConfig.azureConfig?.enabled) {
           try {
-            // Create and upload JSON file first (no virus scan needed for JSON)
+            // Create JSON content but DON'T upload yet (wait for virus scan)
             const jsonContent = JSON.stringify(jsonData, null, 2)
             const jsonBuffer = Buffer.from(jsonContent, 'utf-8')
 
-            const jsonFile = {
-              buffer: jsonBuffer,
-              originalname: timestampedJsonName,
-              mimetype: 'application/json',
-              size: jsonBuffer.length
-            }
-
-            await azureStorageService.uploadFile(
-              uploadResult.uploadId,
-              jsonFile,
-              {
-                originalName: timestampedJsonName,
-                contentType: 'application/json',
-                type: 'form-data',
-                relatedSpreadsheet: timestampedSpreadsheetName,
-                originalFilename,
-                timestamp
-              }
-            )
-
-            console.log('JSON uploaded to Azure immediately', {
+            console.log('Preparing JSON for Azure upload after virus scan', {
               uploadId: uploadResult.uploadId,
               json: timestampedJsonName,
               spreadsheet: timestampedSpreadsheetName,
               originalFilename,
               timestamp,
-              note: 'Spreadsheet will be uploaded after virus scan via callback'
+              note: 'Both JSON and spreadsheet will be uploaded after virus scan via callback'
             })
 
-            // Store JSON filename and spreadsheet name in metadata for later reference
-            // This ensures both files have the same timestamp
+            // Store JSON buffer, filename and spreadsheet name in Redis for callback handler
+            // This ensures both files have the same timestamp and are uploaded together
             await redisUploadStore.updateUpload(uploadResult.uploadId, {
               jsonFilename: timestampedJsonName,
+              jsonBuffer: jsonBuffer.toString('base64'),
+              jsonContent,
               originalSpreadsheetName: timestampedSpreadsheetName,
               originalFilename,
-              timestamp
+              timestamp,
+              formData: jsonData
             })
-          } catch (azureError) {
-            console.warn('Azure JSON upload failed:', azureError.message)
+          } catch (redisError) {
+            console.warn(
+              'Failed to store JSON metadata in Redis:',
+              redisError.message
+            )
           }
         }
 
