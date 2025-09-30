@@ -22,6 +22,17 @@ export const azureStorageService = {
       const blobName = fileName
       const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
+      console.log('Azure upload - filename resolution', {
+        uploadId,
+        resolvedFileName: fileName,
+        resolvedBlobName: blobName,
+        fileExtension: fileName.match(/\.[^.]+$/)?.[0],
+        metadata_originalName: metadata.originalName,
+        file_originalname: file.originalname,
+        file_hapi_filename: file.hapi?.filename,
+        metadataType: metadata.type
+      })
+
       let buffer
       if (Buffer.isBuffer(file)) {
         buffer = file

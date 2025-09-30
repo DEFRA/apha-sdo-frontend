@@ -195,6 +195,18 @@ const formSubmissionService = {
         const timestampedSpreadsheetName = `${filenameBase}_${timestamp}${fileExtension}`
         const timestampedJsonName = `${filenameBase}_${timestamp}.json`
 
+        console.log('Form file upload - filename generation', {
+          originalFilename,
+          filenameBase,
+          fileExtension,
+          timestamp,
+          timestampedSpreadsheetName,
+          spreadsheetExtension:
+            timestampedSpreadsheetName.match(/\.[^.]+$/)?.[0],
+          timestampedJsonName,
+          jsonExtension: timestampedJsonName.match(/\.[^.]+$/)?.[0]
+        })
+
         // Convert stream to buffer once for both uploads
         let fileBuffer
         if (Buffer.isBuffer(file)) {
