@@ -110,42 +110,32 @@ const formSubmissionService = {
         }
       })
 
-      // Also upload to Azure if configured
+      // Store additional metadata for callback handler to use
+      // Azure upload will happen automatically after virus scan passes via handleCdpCallback
       if (uploadConfig.azureConfig?.enabled) {
         try {
-          // Create file object with buffer for Azure upload
-          const azureFile = {
-            buffer: fileBuffer,
-            originalname: timestampedFilename,
-            mimetype: contentType,
-            size: fileBuffer.length
-          }
-
-          await azureStorageService.uploadFile(
-            uploadResult.uploadId,
-            azureFile,
-            {
-              originalName: timestampedFilename,
-              originalFilename,
-              timestamp,
-              type: 'spreadsheet'
-            }
-          )
-
-          console.info('File uploaded to both CDP and Azure successfully', {
-            uploadId: uploadResult.uploadId,
-            timestampedFilename,
+          await redisUploadStore.updateUpload(uploadResult.uploadId, {
+            originalSpreadsheetName: timestampedFilename,
             originalFilename,
             timestamp,
-            formId: formId || 'unknown'
+            formId
           })
-        } catch (azureError) {
-          console.error('Azure upload failed but CDP upload succeeded:', {
+
+          console.info(
+            'File uploaded to CDP for virus scanning, Azure upload will follow after clean scan',
+            {
+              uploadId: uploadResult.uploadId,
+              timestampedFilename,
+              originalFilename,
+              timestamp,
+              formId: formId || 'unknown',
+              note: 'Azure upload will be triggered by CDP callback handler'
+            }
+          )
+        } catch (redisError) {
+          console.warn('Failed to update upload metadata in Redis:', {
             uploadId: uploadResult.uploadId,
-            timestampedFilename,
-            originalFilename,
-            formId: formId || 'unknown',
-            error: azureError.message
+            error: redisError.message
           })
         }
       }
