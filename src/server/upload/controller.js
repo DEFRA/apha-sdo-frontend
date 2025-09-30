@@ -85,7 +85,45 @@ export const uploadController = {
   async handleFormSubmission(request, h) {
     try {
       const logger = request.logger.child({ component: 'upload-controller' })
-      const { payload } = request
+      const { payload, headers } = request
+
+      // Check if this is a CDP callback (JSON) by checking content-type
+      // CDP callbacks use application/json, file uploads use multipart/form-data
+      const contentType = headers['content-type'] || ''
+
+      if (contentType.includes('application/json')) {
+        // This is a CDP callback - read the JSON payload
+        const chunks = []
+        if (payload && typeof payload.on === 'function') {
+          await new Promise((resolve, reject) => {
+            payload.on('data', (chunk) => chunks.push(chunk))
+            payload.on('end', () => resolve())
+            payload.on('error', reject)
+          })
+        }
+
+        const jsonPayload = JSON.parse(Buffer.concat(chunks).toString('utf-8'))
+
+        if (
+          jsonPayload.uploadId &&
+          (jsonPayload.status || jsonPayload.virusScanStatus)
+        ) {
+          logger.info(
+            'Detected CDP callback to /file endpoint, delegating to callback handler',
+            {
+              uploadId: jsonPayload.uploadId,
+              status: jsonPayload.status,
+              virusScanStatus: jsonPayload.virusScanStatus
+            }
+          )
+
+          // Create a modified request object with parsed payload for callback handler
+          request.payload = jsonPayload
+          return this.handleCdpCallback(request, h)
+        }
+      }
+
+      // Regular file upload handling
       const { formData, file } = payload
 
       if (file) {
