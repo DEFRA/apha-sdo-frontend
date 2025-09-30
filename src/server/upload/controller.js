@@ -47,11 +47,26 @@ export const uploadController = {
       })
 
       try {
+        // Get existing upload to preserve fileBuffer and contentType
+        const existingUpload = await redisUploadStore.getUpload(
+          uploadResult.uploadId
+        )
+
         await redisUploadStore.updateUpload(uploadResult.uploadId, {
           originalSpreadsheetName: timestampedFilename,
           originalFilename,
           timestamp,
-          status: 'awaiting_callback'
+          status: 'awaiting_callback',
+          // Explicitly preserve critical fields
+          fileBuffer: existingUpload?.fileBuffer,
+          contentType: existingUpload?.contentType || contentType
+        })
+
+        logger.debug('Upload metadata updated', {
+          uploadId: uploadResult.uploadId,
+          hasFileBuffer: !!existingUpload?.fileBuffer,
+          fileBufferLength: existingUpload?.fileBuffer?.length,
+          contentType: existingUpload?.contentType || contentType
         })
       } catch (redisError) {
         logger.warn('Failed to update upload data in Redis', {
@@ -168,12 +183,27 @@ export const uploadController = {
         })
 
         try {
+          // Get existing upload to preserve fileBuffer and contentType
+          const existingUpload = await redisUploadStore.getUpload(
+            uploadResult.uploadId
+          )
+
           await redisUploadStore.updateUpload(uploadResult.uploadId, {
             originalSpreadsheetName: timestampedFilename,
             originalFilename,
             timestamp,
             status: 'awaiting_callback',
-            formData
+            formData,
+            // Explicitly preserve critical fields
+            fileBuffer: existingUpload?.fileBuffer,
+            contentType: existingUpload?.contentType || contentType
+          })
+
+          logger.debug('Form upload metadata updated', {
+            uploadId: uploadResult.uploadId,
+            hasFileBuffer: !!existingUpload?.fileBuffer,
+            fileBufferLength: existingUpload?.fileBuffer?.length,
+            contentType: existingUpload?.contentType || contentType
           })
         } catch (redisError) {
           logger.warn('Failed to update form upload data in Redis', {

@@ -114,11 +114,19 @@ const formSubmissionService = {
       // Azure upload will happen automatically after virus scan passes via handleCdpCallback
       if (uploadConfig.azureConfig?.enabled) {
         try {
+          // Get existing upload to preserve fileBuffer and contentType
+          const existingUpload = await redisUploadStore.getUpload(
+            uploadResult.uploadId
+          )
+
           await redisUploadStore.updateUpload(uploadResult.uploadId, {
             originalSpreadsheetName: timestampedFilename,
             originalFilename,
             timestamp,
-            formId
+            formId,
+            // Explicitly preserve fileBuffer and contentType
+            fileBuffer: existingUpload?.fileBuffer,
+            contentType: existingUpload?.contentType || contentType
           })
 
           console.info(
@@ -129,6 +137,7 @@ const formSubmissionService = {
               originalFilename,
               timestamp,
               formId: formId || 'unknown',
+              hasFileBuffer: !!existingUpload?.fileBuffer,
               note: 'Azure upload will be triggered by CDP callback handler'
             }
           )
@@ -239,6 +248,19 @@ const formSubmissionService = {
               note: 'Both JSON and spreadsheet will be uploaded after virus scan via callback'
             })
 
+            // Get existing upload data to preserve fileBuffer and contentType
+            const existingUpload = await redisUploadStore.getUpload(
+              uploadResult.uploadId
+            )
+
+            console.log('Existing upload data before JSON metadata update', {
+              uploadId: uploadResult.uploadId,
+              hasFileBuffer: !!existingUpload?.fileBuffer,
+              fileBufferLength: existingUpload?.fileBuffer?.length,
+              contentType: existingUpload?.contentType,
+              filename: existingUpload?.filename
+            })
+
             // Store JSON buffer, filename and spreadsheet name in Redis for callback handler
             // This ensures both files have the same timestamp and are uploaded together
             await redisUploadStore.updateUpload(uploadResult.uploadId, {
@@ -248,7 +270,14 @@ const formSubmissionService = {
               originalSpreadsheetName: timestampedSpreadsheetName,
               originalFilename,
               timestamp,
-              formData: jsonData
+              formData: jsonData,
+              // Explicitly preserve fileBuffer and contentType from initial upload
+              fileBuffer: existingUpload?.fileBuffer,
+              contentType:
+                existingUpload?.contentType ||
+                file.mimetype ||
+                file.type ||
+                'application/octet-stream'
             })
           } catch (redisError) {
             console.warn(
@@ -269,7 +298,7 @@ const formSubmissionService = {
       } else {
         // No file, just save form data as JSON if Azure is enabled
         if (uploadConfig.azureConfig?.enabled) {
-          const timestamp = Date.now()
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
           const jsonFilename = `form_submission_${timestamp}.json`
           const jsonContent = JSON.stringify(jsonData, null, 2)
           const jsonBuffer = Buffer.from(jsonContent, 'utf-8')
